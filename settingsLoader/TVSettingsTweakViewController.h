@@ -9,6 +9,10 @@
 //lazily including paired down bare necessity headers for now, will make this more proper later
 
 #import <UIKit/UIKit.h>
+#import "TSKVibrantImageView.h"
+#import "TSKPreviewViewController.h"
+#import <objc/runtime.h>
+
 
 @interface TSKBundleLoader : NSObject {
     
@@ -76,5 +80,11 @@
 @end
 
 @interface TVSettingsTweakViewController : TSKViewController
+
+@end
+
+@interface TSKSettingItem (lazyIcons) 
+
+@property (nonatomic, strong) UIImage *itemIcon;
 
 @end

@@ -19,12 +19,42 @@ preferenceBundleGroups is called by loadSettingGroups which is the initial entry
 #import "TVSettingsTweakViewController.h"
 
 
+
+@implementation TSKSettingItem (lazyIcons) 
+
+- (UIImage *)itemIcon
+{
+    return objc_getAssociatedObject(self, @selector(itemIcon));
+}
+
+- (void)setItemIcon:(UIImage *)itemIcon {
+    objc_setAssociatedObject(self, @selector(itemIcon), itemIcon, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
+
+@end
+
+@interface TVSettingsTweakViewController() {
+
+	NSMutableArray *_iconArray;
+
+}
+
+@end
+
+
 @implementation TVSettingsTweakViewController
 
 //initial entry point for any type of TSKViewController (which we inherit from)
 
 - (id)loadSettingGroups {
     
+	if (_iconArray) {
+		[_iconArray removeAllObjects];
+		_iconArray	= nil;
+	}
+
+	_iconArray = [NSMutableArray new];
+
     NSMutableArray *_backingArray = [NSMutableArray new];
     NSArray *prefBundleGroups = [self preferenceBundleGroups];
     NSLog(@"prefBundleGroups: %@", prefBundleGroups);
@@ -169,8 +199,17 @@ NOTE: currently only supports bundles loading custom code, its on the todo to ge
 				//this does the magic of loading the class from the bundle
 				TSKBundleLoader *bundleLoader = [[TSKBundleLoader alloc] initWithBundle:prefBundle];
                 [item setBundleLoader:bundleLoader];
+				
+				NSLog(@"iconKey: %@", iconKey);
 
-                NSLog(@"item: %@", item);
+				NSString *iconPath = [bundlePath stringByAppendingPathComponent:iconKey];
+				//NSString *iconPath =[[NSBundle mainBundle] pathForResource:[iconKey stringByDeletingPathExtension] ofType:[iconKey pathExtension]];
+                
+				NSLog(@"iconPath: %@", iconPath);
+				UIImage *image = [UIImage imageWithContentsOfFile:iconPath];
+				NSLog(@"image: %@", image);
+				[item setItemIcon:image];
+				NSLog(@"item: %@", item);
                 [items addObject:item];
 
 			//old iOS code, tvOS doesn't appear to ever use specifiers, in for posterity but will be pruned out eventually
@@ -212,7 +251,26 @@ NOTE: currently only supports bundles loading custom code, its on the todo to ge
 }
 
 
+-(id)previewForItemAtIndexPath:(NSIndexPath *)indexPath {
 
+	TSKPreviewViewController *item = [super previewForItemAtIndexPath:indexPath];
+	TSKSettingGroup *currentGroup = self.settingGroups[indexPath.section];
+	NSLog(@"currentGroup: %@", currentGroup);
+	TSKSettingItem *currentItem = currentGroup.settingItems[indexPath.row];
+	NSLog(@"current item: %@", currentItem);
+	//NSBundle *currentBundle = currentItem.bundleLoader.bundle;
+	//NSLog(@"currentBundle: %@", currentBundle);
+	UIImage *icon = [currentItem itemIcon];
+	if (icon != nil) {
+		TSKVibrantImageView *imageView = [[TSKVibrantImageView alloc] initWithImage:icon];
+		NSLog(@"current item: %@", imageView);
+		[item setContentView:imageView];
+	}
+	NSLog(@"previewForItemAtIndexPath: %@", item);
+
+	return item;
+
+}
 
 
 @end

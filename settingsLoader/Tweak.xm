@@ -5,6 +5,7 @@
 #import <sys/utsname.h>
 #import <UIKit/UIKit.h>
 #import "TVSettingsTweakViewController.h"
+#import <objc/runtime.h>
 
 // static NSInteger PSSpecifierSort(PSSpecifier *a1, PSSpecifier *a2, void *context) {
 // 	NSString *string1 = [a1 name];
