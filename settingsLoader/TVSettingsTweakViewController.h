@@ -6,6 +6,8 @@
 //  Copyright © 2018 nito. All rights reserved.
 //
 
+//lazily including paired down bare necessity headers for now, will make this more proper later
+
 #import <UIKit/UIKit.h>
 
 @interface TSKBundleLoader : NSObject {

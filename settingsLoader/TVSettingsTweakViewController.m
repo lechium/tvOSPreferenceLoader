@@ -8,19 +8,76 @@
 
 /*
 
-This is where a lot of the 'magic' happens specifiersFromEntry:sourcePreferenceLoaderBundlePath
+This is where a lot of the 'magic' happens specifiersFromEntry:sourcePreferenceLoaderBundlePath:title is pulled straight 
+from the iOS version of preferenceloader with some things trimmed out or commented out that cant or wont be reused.
 
+preferenceBundleGroups is called by loadSettingGroups which is the initial entry point for everything.
 
 */
 
 
 #import "TVSettingsTweakViewController.h"
 
+
 @implementation TVSettingsTweakViewController
 
-//static NSMutableArray *_loadedSpecifiers = nil;
-//static NSInteger _extraPrefsGroupSectionID = 0;
+//initial entry point for any type of TSKViewController (which we inherit from)
 
+- (id)loadSettingGroups {
+    
+    NSMutableArray *_backingArray = [NSMutableArray new];
+    NSArray *prefBundleGroups = [self preferenceBundleGroups];
+    NSLog(@"prefBundleGroups: %@", prefBundleGroups);
+    if (prefBundleGroups.count > 0) {
+        TSKSettingGroup *group = [TSKSettingGroup groupWithTitle:nil settingItems:prefBundleGroups];
+        [_backingArray addObject:group];
+        [self setValue:_backingArray forKey:@"_settingGroups"];
+    }
+    
+    
+    return _backingArray;
+    
+}
+
+//search through /Library/PreferenceLoader/Preferences for entries to add, currently is only supporting adding to Tweaks menu item
+
+- (NSArray *)preferenceBundleGroups {
+
+    NSMutableArray *allTheSpecs = [NSMutableArray new];
+	NSArray *subpaths = [[NSFileManager defaultManager] subpathsOfDirectoryAtPath:@"/Library/PreferenceLoader/Preferences" error:NULL];
+		for(NSString *item in subpaths) {
+			if(![[item pathExtension] isEqualToString:@"plist"]) continue;
+			NSLog(@"processing %@", item);
+			NSString *fullPath = [NSString stringWithFormat:@"/Library/PreferenceLoader/Preferences/%@", item];
+			NSDictionary *plPlist = [NSDictionary dictionaryWithContentsOfFile:fullPath];
+			//if(![PSSpecifier environmentPassesPreferenceLoaderFilter:[plPlist objectForKey:@"filter"] ?: [plPlist objectForKey:PLFilterKey]]) continue;
+
+			NSDictionary *entry = [plPlist objectForKey:@"entry"];
+			if(!entry) continue;
+			NSLog(@"found an entry key for %@!", item);
+
+            //TODO: Add support for specifier filtering.
+			//if(![PSSpecifier environmentPassesPreferenceLoaderFilter:[entry objectForKey:PLFilterKey]]) continue;
+
+			NSArray *specs = [self specifiersFromEntry:entry sourcePreferenceLoaderBundlePath:[fullPath stringByDeletingLastPathComponent] title:[[item lastPathComponent] stringByDeletingPathExtension]];
+			if(!specs) continue;
+
+			NSLog(@"appending to the array!");
+
+            [allTheSpecs addObjectsFromArray:specs];
+		}
+    return allTheSpecs;
+}
+
+
+/*
+
+ plucked straight from iOS version in prefs.xm, this will return the TSKSettingItem that will get added to our list
+
+NOTE: currently only supports bundles loading custom code, its on the todo to get the easier plist style lists working too
+
+
+*/
 
  - (NSArray *)specifiersFromEntry:(NSDictionary *)entry sourcePreferenceLoaderBundlePath:(NSString *)sourceBundlePath title:(NSString *)title {
 
@@ -87,7 +144,7 @@ This is where a lot of the 'magic' happens specifiersFromEntry:sourcePreferenceL
 
     NSMutableArray *items = [NSMutableArray  new];
 
-    //nothing is confirmed yet heh
+    //old comment nothing is confirmed yet, heh
 	//NSLog(@"It's confirmed! There are Specifiers here, Captain!");
 
 	if(isBundle) {
@@ -97,21 +154,26 @@ This is where a lot of the 'magic' happens specifiersFromEntry:sourcePreferenceL
 		 // Only set lazy-bundle for isController specifiers.
 		if([[entry objectForKey:@"isController"] boolValue]) {
 			
-            	NSLog(@"loading specifiers!");
+            	NSLog(@"creating TSKSettingItems!");
 
   	            NSString *principalClassKey = entry[@"detail"];
-	            NSString *iconKey = entry[@"icon"];
+	            NSString *iconKey = entry[@"icon"]; //currently unused, need to figure out how im going to make this work
                 NSString *labelKey = entry[@"label"];
-	            NSString *descriptionKey = entry[@"description"];
+	            NSString *descriptionKey = entry[@"description"]; //note part of original spec, custom addition.
+				//load the bundle so we can get access to the class
                 [prefBundle load];
+
+			    //all items are going to be child panel items for now which allow use to load another class that gives us our groups from said tweak
                 TSKSettingItem *item = [TSKSettingItem childPaneItemWithTitle:labelKey description:descriptionKey representedObject:nil keyPath:nil childControllerClass:NSClassFromString(principalClassKey)];
-                TSKBundleLoader *bundleLoader = [[TSKBundleLoader alloc] initWithBundle:prefBundle];
+                
+				//this does the magic of loading the class from the bundle
+				TSKBundleLoader *bundleLoader = [[TSKBundleLoader alloc] initWithBundle:prefBundle];
                 [item setBundleLoader:bundleLoader];
 
                 NSLog(@"item: %@", item);
                 [items addObject:item];
 
-
+			//old iOS code, tvOS doesn't appear to ever use specifiers, in for posterity but will be pruned out eventually
             /*
             for(PSSpecifier *specifier in specs) {
 				[specifier setProperty:bundlePath forKey:PSLazilyLoadedBundleKey];
@@ -149,51 +211,8 @@ This is where a lot of the 'magic' happens specifiersFromEntry:sourcePreferenceL
 	return items;
 }
 
-//search through /Library/PreferenceLoader/Preferences for entries to add, currently is only supporting adding to Tweaks menu item
-
-- (NSArray *)preferenceBundleGroups {
-
-    NSMutableArray *allTheSpecs = [NSMutableArray new];
-	NSArray *subpaths = [[NSFileManager defaultManager] subpathsOfDirectoryAtPath:@"/Library/PreferenceLoader/Preferences" error:NULL];
-		for(NSString *item in subpaths) {
-			if(![[item pathExtension] isEqualToString:@"plist"]) continue;
-			NSLog(@"processing %@", item);
-			NSString *fullPath = [NSString stringWithFormat:@"/Library/PreferenceLoader/Preferences/%@", item];
-			NSDictionary *plPlist = [NSDictionary dictionaryWithContentsOfFile:fullPath];
-			//if(![PSSpecifier environmentPassesPreferenceLoaderFilter:[plPlist objectForKey:@"filter"] ?: [plPlist objectForKey:PLFilterKey]]) continue;
-
-			NSDictionary *entry = [plPlist objectForKey:@"entry"];
-			if(!entry) continue;
-			NSLog(@"found an entry key for %@!", item);
-
-            //TODO: Add support for specifier filtering.
-			//if(![PSSpecifier environmentPassesPreferenceLoaderFilter:[entry objectForKey:PLFilterKey]]) continue;
-
-			NSArray *specs = [self specifiersFromEntry:entry sourcePreferenceLoaderBundlePath:[fullPath stringByDeletingLastPathComponent] title:[[item lastPathComponent] stringByDeletingPathExtension]];
-			if(!specs) continue;
-
-			NSLog(@"appending to the array!");
-
-            [allTheSpecs addObjectsFromArray:specs];
-		}
-    return allTheSpecs;
-}
 
 
-- (id)loadSettingGroups {
-    
-    NSMutableArray *_backingArray = [NSMutableArray new];
-    NSArray *prefBundleGroups = [self preferenceBundleGroups];
-    NSLog(@"prefBundleGroups: %@", prefBundleGroups);
-    if (prefBundleGroups.count > 0) {
-        TSKSettingGroup *group = [TSKSettingGroup groupWithTitle:nil settingItems:prefBundleGroups];
-        [_backingArray addObject:group];
-        [self setValue:_backingArray forKey:@"_settingGroups"];
-    }
-    
-    
-    return _backingArray;
-    
-}
+
 
 @end
