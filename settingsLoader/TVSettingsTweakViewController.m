@@ -57,7 +57,7 @@ preferenceBundleGroups is called by loadSettingGroups which is the initial entry
 
     NSMutableArray *_backingArray = [NSMutableArray new];
     NSArray *prefBundleGroups = [self preferenceBundleGroups];
-    NSLog(@"prefBundleGroups: %@", prefBundleGroups);
+    //NSLog(@"prefBundleGroups: %@", prefBundleGroups);
     if (prefBundleGroups.count > 0) {
         TSKSettingGroup *group = [TSKSettingGroup groupWithTitle:nil settingItems:prefBundleGroups];
         [_backingArray addObject:group];
@@ -253,22 +253,19 @@ NOTE: currently only supports bundles loading custom code, its on the todo to ge
 
 -(id)previewForItemAtIndexPath:(NSIndexPath *)indexPath {
 
-	TSKPreviewViewController *item = [super previewForItemAtIndexPath:indexPath];
+	TSKPreviewViewController *previewItem = [super previewForItemAtIndexPath:indexPath];
 	TSKSettingGroup *currentGroup = self.settingGroups[indexPath.section];
-	NSLog(@"currentGroup: %@", currentGroup);
 	TSKSettingItem *currentItem = currentGroup.settingItems[indexPath.row];
-	NSLog(@"current item: %@", currentItem);
 	//NSBundle *currentBundle = currentItem.bundleLoader.bundle;
 	//NSLog(@"currentBundle: %@", currentBundle);
+	//added a category to make item icons easier to get and set per item.
 	UIImage *icon = [currentItem itemIcon];
 	if (icon != nil) {
 		TSKVibrantImageView *imageView = [[TSKVibrantImageView alloc] initWithImage:icon];
-		NSLog(@"current item: %@", imageView);
-		[item setContentView:imageView];
+		[previewItem setContentView:imageView];
 	}
-	NSLog(@"previewForItemAtIndexPath: %@", item);
-
-	return item;
+	//NSLog(@"previewForItemAtIndexPath: %@", previewItem);
+	return previewItem;
 
 }
 

@@ -1,9 +1,9 @@
-Package: com.nito.settingsloader
-Name: settingsLoader
+Package: preferenceloader
+Name: preferenceloader
 Depends: mobilesubstrate
-Version: 0.0.1
+Version: 1.0
 Architecture: appletvos-arm64
-Description: An awesome MobileSubstrate tweak!
+Description: load preferences in style, based on Dustin Howett's iOS version.
 Maintainer: Kevin Bradley
 Author: Kevin Bradley
-Section: Tweaks
+Section: System

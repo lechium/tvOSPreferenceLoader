@@ -32,22 +32,35 @@
 
 //loadSettingsGroups is the initial entry point of every group of settings items in TVSettingsApp, this is the root one
 
+%new - (BOOL)loadTweakMenu {
+
+//right now just see if theres ANY plists in this folder, make this smarter later
+	NSArray *subpaths = [[NSFileManager defaultManager] subpathsOfDirectoryAtPath:@"/Library/PreferenceLoader/Preferences" error:NULL];
+		for(NSString *item in subpaths) {
+			if(![[item pathExtension] isEqualToString:@"plist"]) continue;
+
+			return YES; //we have even one plist in here	
+		}
+	return NO;
+}
+
 - (id)loadSettingGroups {
 	
 	%log;
+	if (![self loadTweakMenu]){
+		NSLog(@"no tweaks to load, dont even load the menu!");
+		return %orig;
+	}
 	NSArray* groups = %orig;//all the groups (theres only 1)
-	TSKSettingGroup *group = groups[0]; //get group 1
-	//our tweak loading class, in the future there will be more here, or we might add directly to the avail Apps one
-	Class theClass = NSClassFromString(@"TVSettingsTweakViewController");
-	TSKSettingItem *tweakMenuItem = [TSKSettingItem childPaneItemWithTitle:@"Tweaks" description:nil representedObject:nil keyPath:nil childControllerClass:theClass];
-	//each TSKSettingGroup has an array of TSKSettingItem in "settingsItem" property
-	NSArray *settingsItems = [group valueForKey:@"settingItems"];
+	TSKSettingGroup *group = groups[0]; //get group 1	
+	//right now just show tweak list item, maybe in future add an app item too OR (ideally) inject into the current Application list that already exists (if even necessary)
+	TSKSettingItem *tweakMenuItem = [TSKSettingItem childPaneItemWithTitle:@"Tweaks" description:nil representedObject:nil keyPath:nil childControllerClass:TVSettingsTweakViewController.class];
+	NSArray *settingsItems = [group settingItems];
 	NSMutableArray *newItems = [settingsItems mutableCopy];
 	[newItems insertObject:tweakMenuItem atIndex:7]; //right underneath /Apps
 	//update the group to have our Tweaks item shoehorned in :)
 	[group setSettingItems:newItems];
 	return @[group];
-	
 }
 
 %end
