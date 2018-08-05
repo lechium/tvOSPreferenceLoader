@@ -18,7 +18,12 @@ preferenceBundleGroups is called by loadSettingGroups which is the initial entry
 
 #import "TVSettingsTweakViewController.h"
 
+/**
 
+Add an itemIcon for TSKSettingItem, this is a lazy convenience to make it easier to set icons per item
+There is a likely a more elegant and proper way to do this, but it works for now and wont hurt anything.
+
+*/
 
 @implementation TSKSettingItem (lazyIcons) 
 
@@ -35,7 +40,7 @@ preferenceBundleGroups is called by loadSettingGroups which is the initial entry
 
 @interface TVSettingsTweakViewController() {
 
-	NSMutableArray *_iconArray;
+	NSMutableArray *_iconArray; //currently unused, likey to be pruned out
 
 }
 
@@ -61,6 +66,7 @@ preferenceBundleGroups is called by loadSettingGroups which is the initial entry
     if (prefBundleGroups.count > 0) {
         TSKSettingGroup *group = [TSKSettingGroup groupWithTitle:nil settingItems:prefBundleGroups];
         [_backingArray addObject:group];
+		//property is read only, so maybe we really should be overriding settingsGroup property instead... more thought needed.
         [self setValue:_backingArray forKey:@"_settingGroups"];
     }
     

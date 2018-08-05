@@ -30,13 +30,13 @@
 
 @interface TVSettingsMainViewController: TSKViewController
 
- - (BOOL)loadTweakMenu;
+ - (BOOL)loadTweakMenu; //a function we add, add this header to prevent build warnings
 
 @end
 
 %hook TVSettingsMainViewController
 
-//loadSettingsGroups is the initial entry point of every group of settings items in TVSettingsApp, this is the root one
+//add a new function to test whether or not the tweak menu should be shown
 
 %new - (BOOL)loadTweakMenu {
 
@@ -50,6 +50,15 @@
 	return NO;
 }
 
+/* 
+	loadSettingsGroups is the initial entry point of every group of settings items in TVSettingsApp, this is the root one
+
+	All menu items in the TVSettings application are organized in TSKSettingGroups of TSKSettingItem. These items could
+	be viewed as PSSpecifiers in a manner of speaking, its solely what we deal with when we create menu items.
+
+	therefore the property - (NSArray *)settingsGroups could be thought of as how - (id)specifiers; is in iOS, theoretically
+	we could override the property variable for - (NSArray *)settingsGroups instead of -(id)loadSettignsGroup, but this works so meh!
+*/
 - (id)loadSettingGroups {
 	
 	%log;
@@ -57,13 +66,13 @@
 		NSLog(@"no tweaks to load, dont even load the menu!");
 		return %orig;
 	}
-	NSArray* groups = %orig;//all the groups (theres only 1)
-	TSKSettingGroup *group = groups[0]; //get group 1	
+	NSArray* groups = %orig;//all the groups (although theres only 1) - this is appears to be a reference to the settingsGroup property
+	TSKSettingGroup *group = groups[0]; //get first (and only) group	
 	//right now just show tweak list item, maybe in future add an app item too OR (ideally) inject into the current Application list that already exists (if even necessary)
 	TSKSettingItem *tweakMenuItem = [TSKSettingItem childPaneItemWithTitle:@"Tweaks" description:nil representedObject:nil keyPath:nil childControllerClass:TVSettingsTweakViewController.class];
-	NSArray *settingsItems = [group settingItems];
-	NSMutableArray *newItems = [settingsItems mutableCopy];
-	[newItems insertObject:tweakMenuItem atIndex:7]; //right underneath /Apps
+	NSArray *settingsItems = [group settingItems]; //get the individual TSKSettingItems
+	NSMutableArray *newItems = [settingsItems mutableCopy]; //make a mutable copy, although there may be a way to add one without doing this.. TODO
+	[newItems insertObject:tweakMenuItem atIndex:7]; //right underneath "Applications"
 	//update the group to have our Tweaks item shoehorned in :)
 	[group setSettingItems:newItems];
 	return @[group];
