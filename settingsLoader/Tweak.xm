@@ -28,6 +28,12 @@
 }
 %end
 
+@interface TVSettingsMainViewController: TSKViewController
+
+ - (BOOL)loadTweakMenu;
+
+@end
+
 %hook TVSettingsMainViewController
 
 //loadSettingsGroups is the initial entry point of every group of settings items in TVSettingsApp, this is the root one

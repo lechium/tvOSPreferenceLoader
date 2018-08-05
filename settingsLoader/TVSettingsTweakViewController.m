@@ -111,10 +111,10 @@ NOTE: currently only supports bundles loading custom code, its on the todo to ge
 
  - (NSArray *)specifiersFromEntry:(NSDictionary *)entry sourcePreferenceLoaderBundlePath:(NSString *)sourceBundlePath title:(NSString *)title {
 
-	NSDictionary *specifierPlist = [NSDictionary dictionaryWithObjectsAndKeys:[NSArray arrayWithObjects:entry, nil], @"items", nil];
+	//NSDictionary *specifierPlist = [NSDictionary dictionaryWithObjectsAndKeys:[NSArray arrayWithObjects:entry, nil], @"items", nil];
 
 	BOOL isBundle = [entry objectForKey:@"bundle"] != nil;
-	BOOL isLocalizedBundle = ![[sourceBundlePath lastPathComponent] isEqualToString:@"Preferences"];
+	//BOOL isLocalizedBundle = ![[sourceBundlePath lastPathComponent] isEqualToString:@"Preferences"];
 
 	NSBundle *prefBundle;
 	NSString *bundleName = entry[@"bundle"];

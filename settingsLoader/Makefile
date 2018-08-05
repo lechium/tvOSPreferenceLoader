@@ -9,7 +9,7 @@ TWEAK_NAME = settingsLoader
 settingsLoader_FILES = Tweak.xm TVSettingsTweakViewController.m
 settingsLoader_LIBRARIES = substrate
 settingsLoader_FRAMEWORKS = Foundation UIKit TVSettingKit
-settingsLoader_CFLAGS += -I. -ITVSettings
+settingsLoader_CFLAGS += -I. -ITVSettings -ITVSettingsKit
 settingsLoader_LDFLAGS = -undefined dynamic_lookup
 
 include $(THEOS_MAKE_PATH)/tweak.mk
