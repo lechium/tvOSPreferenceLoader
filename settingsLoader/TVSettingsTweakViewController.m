@@ -129,6 +129,17 @@ This is where it converts our plist entries into TSKSettingGroups/Items that can
 
 @end
 
+@implementation TSKSettingGroup (lazyItems)
+
+- (void)addSettingItem:(TSKSettingItem *)item {
+
+	NSMutableArray *currentSettingsItems = [[self settingItems] mutableCopy];
+	[currentSettingsItems addObject:item];
+	[self setSettingItems:currentSettingsItems];
+}
+	
+@end
+	
 /**
 
 Add an itemIcon for TSKSettingItem, this is a lazy convenience to make it easier to set icons per item
