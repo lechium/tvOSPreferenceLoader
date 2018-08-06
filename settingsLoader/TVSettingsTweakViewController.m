@@ -18,10 +18,11 @@ preferenceBundleGroups is called by loadSettingGroups which is the initial entry
 
 #import "TVSettingsTweakViewController.h"
 #import "TSKTextInputViewController.h"
-/**
 
-Add an itemIcon for TSKSettingItem, this is a lazy convenience to make it easier to set icons per item
-There is a likely a more elegant and proper way to do this, but it works for now and wont hurt anything.
+/*
+
+This is where it converts our plist entries into TSKSettingGroups/Items that can actually be displayed in TVSettings. If applicable.
+
 
 */
 
@@ -46,16 +47,16 @@ There is a likely a more elegant and proper way to do this, but it works for now
             
 			if (currentGroupItems.count < 1){ //we might not have any group items yet!
 				currentGroupName = label;
-				NSLog(@"no groups yet, starting with group name: %@", label);
+				//NSLog(@"no groups yet, starting with group name: %@", label);
 				haveGroups = TRUE;
 
 			} else {
 				
-				NSLog(@"we already have a group: %@ adding items %@", currentGroupName, currentGroupItems);
+				//NSLog(@"we already have a group: %@ adding items %@", currentGroupName, currentGroupItems);
 				TSKSettingGroup *groupItem = [TSKSettingGroup groupWithTitle:currentGroupName settingItems:currentGroupItems];
             	[groups addObject:groupItem];
 				currentGroupName = label;
-				NSLog(@"starting a new group: %@", currentGroupName);
+				//NSLog(@"starting a new group: %@", currentGroupName);
 				[currentGroupItems removeAllObjects];
 			}
          
@@ -95,7 +96,7 @@ There is a likely a more elegant and proper way to do this, but it works for now
    		    [textEntryItem setKeyboardDetails:obj];
             [currentGroupItems addObject:textEntryItem];
             
-        } else if ([cell isEqualToString:@"PSMultiItemCell"]) {
+        } else if ([cell isEqualToString:@"PSMultiItemCell"]) { //new tvOS only special addition :D
 
 			NSString *key = obj[@"key"];
             NSString *label = obj[@"label"];
@@ -110,6 +111,9 @@ There is a likely a more elegant and proper way to do this, but it works for now
 
 		}
     }];
+	
+	//the logic above is a bit janky, if we only have one group nothing ever gets created (since we create the groups at the start of the next)
+	//FIXME: this means we will miss first and last groups when theres more than 1
     if (haveGroups == TRUE && groups.count == 0) {
 
 			TSKSettingGroup *groupItem = [TSKSettingGroup groupWithTitle:currentGroupName settingItems:currentGroupItems];
@@ -124,6 +128,13 @@ There is a likely a more elegant and proper way to do this, but it works for now
 
 
 @end
+
+/**
+
+Add an itemIcon for TSKSettingItem, this is a lazy convenience to make it easier to set icons per item
+There is a likely a more elegant and proper way to do this, but it works for now and wont hurt anything.
+
+*/
 
 @implementation TSKSettingItem (lazyIcons) 
 
@@ -177,14 +188,6 @@ There is a likely a more elegant and proper way to do this, but it works for now
     
 }
 
-- (id)loadSettingGroups2 {
-
-	NSLog(@"PLCustomListViewController:loadSettingGroups: %@", self.menuItems);
-	id items = [super loadSettingGroups];
-	[self setValue:self.menuItems forKey:@"_settingGroups"];
-	return self.menuItems;
-
-}
 
 - (void)showTextFieldControllerForItem:(TSKSettingItem *)item {
     
@@ -241,7 +244,6 @@ There is a likely a more elegant and proper way to do this, but it works for now
 }
 
 -(id)previewForItemAtIndexPath:(NSIndexPath *)indexPath {
-
 
 	TSKPreviewViewController *previewItem = [super previewForItemAtIndexPath:indexPath];
 /*
@@ -336,20 +338,20 @@ There is a likely a more elegant and proper way to do this, but it works for now
 				NSArray *items = plPlist[@"items"];
 				NSString *iconPath = entry[@"icon"];
 				NSString *description = entry[@"description"];
-				NSLog(@"items: %@", items);
+				//NSLog(@"items: %@", items);
 
-				NSLog(@"creating menu items!!");
-				NSLog(@"icon: %@", iconPath);
+				//NSLog(@"creating menu items!!");
+				//NSLog(@"icon: %@", iconPath);
 				NSString *fullIconPath = [preferencesPath stringByAppendingPathComponent:iconPath];
 				UIImage *image = [UIImage imageWithContentsOfFile:fullIconPath];
-				NSLog(@"fullIconPath: %@", fullIconPath);
-				NSLog(@"image: %@", image);
+				//NSLog(@"fullIconPath: %@", fullIconPath);
+				//NSLog(@"image: %@", image);
 				//NSArray *specs = [self menuItemsFromItems:items];
 				//NSLog(@"created menu items: %@", specs);
 				
 				TSKSettingItem *settingsItem = [TSKSettingItem childPaneItemWithTitle:label description:description representedObject:nil keyPath:nil childControllerBlock:^(id object) {
         
-					NSLog(@"self: %@ object: %@", self, object);
+					//NSLog(@"self: %@ object: %@", self, object);
 					//NSLog(@"still have menu items?: %@", specs);
 					PLCustomListViewController *controller = [PLCustomListViewController new];
 					if (image){
@@ -361,7 +363,7 @@ There is a likely a more elegant and proper way to do this, but it works for now
    				}];
 				[settingsItem setItemIcon:image];
 				[allTheSpecs addObject:settingsItem];
-				NSLog(@"made item: %@", settingsItem);
+				//NSLog(@"made item: %@", settingsItem);
 				//description:(id)arg2 representedObject:(id)arg3 keyPath:(id)arg4 childControllerBlock:((void(^childControllerBlock)(id object))completionBlock
 			}
 		}
@@ -372,9 +374,6 @@ There is a likely a more elegant and proper way to do this, but it works for now
 /*
 
  plucked straight from iOS version in prefs.xm, this will return the TSKSettingItem that will get added to our list
-
-NOTE: currently only supports bundles loading custom code, its on the todo to get the easier plist style lists working too
-
 
 */
 
@@ -410,10 +409,9 @@ NOTE: currently only supports bundles loading custom code, its on the todo to ge
 		NSLog(@"is NOT a bundle, so we're giving it %@!", prefBundle);
 	}
 
-
-    //entry.plist looks something like this
-
 	/*
+
+		entry.plist looks something like this
 
 		<key>bundle</key>
 		<string>DDBSettings</string>
@@ -432,33 +430,21 @@ NOTE: currently only supports bundles loading custom code, its on the todo to ge
 
 	*/
 
-//ios version, the Preferences framework doesn't appear to even be loaded, even though its linked. its odd.
-//tvOS doesn't really seem to use PSSpecifiers at all as far as i can tell, so it'll be hard to do EXACTLY 1:1
-
-	//NSMutableArray *bundleControllers = [self valueForKey:@"_bundleControllers"];//MSHookIvar<NSMutableArray *>(self, "_bundleControllers");
-	//NSArray *specs = SpecifiersFromPlist(specifierPlist, nil, _Firmware_lt_60 ? [self rootController] : self, title, prefBundle, NULL, NULL, (PSListController*)self, &bundleControllers);
-	//NSLog(@"loaded specifiers!");
-
-	//if([specs count] == 0) return nil;
 
     NSMutableArray *items = [NSMutableArray  new];
-
-    //old comment nothing is confirmed yet, heh
-	//NSLog(@"It's confirmed! There are Specifiers here, Captain!");
 
 	if(isBundle) {
         
         NSLog(@"we got a bundle!");
 
-		 // Only set lazy-bundle for isController specifiers.
 		if([[entry objectForKey:@"isController"] boolValue]) {
 			
             	NSLog(@"creating TSKSettingItems!");
 
   	            NSString *principalClassKey = entry[@"detail"];
-	            NSString *iconKey = entry[@"icon"]; //currently unused, need to figure out how im going to make this work
+	            NSString *iconKey = entry[@"icon"]; 
                 NSString *labelKey = entry[@"label"];
-	            NSString *descriptionKey = entry[@"description"]; //note part of original spec, custom addition.
+	            NSString *descriptionKey = entry[@"description"]; //not part of original spec, custom addition.
 				//load the bundle so we can get access to the class
                 [prefBundle load];
 
@@ -469,146 +455,25 @@ NOTE: currently only supports bundles loading custom code, its on the todo to ge
 				TSKBundleLoader *bundleLoader = [[TSKBundleLoader alloc] initWithBundle:prefBundle];
                 [item setBundleLoader:bundleLoader];
 				
-				NSLog(@"iconKey: %@", iconKey);
+				//NSLog(@"iconKey: %@", iconKey);
 
 				NSString *iconPath = [bundlePath stringByAppendingPathComponent:iconKey];
 				//NSString *iconPath =[[NSBundle mainBundle] pathForResource:[iconKey stringByDeletingPathExtension] ofType:[iconKey pathExtension]];
                 
-				NSLog(@"iconPath: %@", iconPath);
+				//NSLog(@"iconPath: %@", iconPath);
 				UIImage *image = [UIImage imageWithContentsOfFile:iconPath];
-				NSLog(@"image: %@", image);
+				//NSLog(@"image: %@", image);
 				[item setItemIcon:image];
-				NSLog(@"item: %@", item);
+			//	NSLog(@"item: %@", item);
                 [items addObject:item];
 
-			//old iOS code, tvOS doesn't appear to ever use specifiers, in for posterity but will be pruned out eventually
-            /*
-            for(PSSpecifier *specifier in specs) {
-				[specifier setProperty:bundlePath forKey:PSLazilyLoadedBundleKey];
-				[specifier setProperty:[NSBundle bundleWithPath:sourceBundlePath] forKey:PLBundleKey];
-				if(!specifier.name) {
-					specifier.name = title;
-				}
-			}
-            */
+		
 		}
 	} else {
 	
         NSLog(@"not a bundle! this feature is currently unsupported entry: %@ path: %@", entry, prefBundle);
 
-    /*
-    	// There really should only be one specifier.
-		PSSpecifier *specifier = [specs objectAtIndex:0];
-		if (isLocalizedBundle) {
-			[specifier setValue:[PLLocalizedListController class] forKey:@"detailControllerClass"];
-		} else {
-			[specifier setValue:[PLCustomListController class] forKey:@"detailControllerClass"];
-		}
-		//MSHookIvar<Class>(specifier, "detailControllerClass") = isLocalizedBundle ? [PLLocalizedListController class] : [PLCustomListController class];
-		[specifier setProperty:prefBundle forKey:PLBundleKey];
-
-		if(![[specifier propertyForKey:PSTitleKey] isEqualToString:title]) {
-			[specifier setProperty:title forKey:PLAlternatePlistNameKey];
-			if(!specifier.name) {
-				specifier.name = title;
-			}
-		}
-        */
-	}
-
-	return items;
-}
-
-/*
-- (NSArray *)menuItemsFromItems:(NSArray *)items {
-    
-    __block NSMutableArray *groups = [NSMutableArray new];
-    __block NSString *currentGroupName = nil;
-    __block NSMutableArray *currentGroupItems = [NSMutableArray new];
-    [items enumerateObjectsUsingBlock:^(NSDictionary  *_Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
-       
-	   NSLog(@"processing objectL %@", obj);
-
-        NSString *cell = obj[@"cell"];
-        NSString *label = obj[@"label"];
-		
-        if ([cell isEqualToString:@"PSGroupCell"]){
-            
-			if (currentGroupItems.count < 1){ //we might not have any group items yet!
-				currentGroupName = label;
-				NSLog(@"no groups yet, starting with group name: %@", label);
-				
-
-			} else {
-				
-				NSLog(@"we already have a group: %@ adding items %@", currentGroupName, currentGroupItems);
-				TSKSettingGroup *groupItem = [TSKSettingGroup groupWithTitle:currentGroupName settingItems:currentGroupItems];
-            	[groups addObject:groupItem];
-				currentGroupName = label;
-				NSLog(@"starting a new group!", currentGroupName);
-				[currentGroupItems removeAllObjects];
-			}
-         
-            
-            
-        } else if ([cell isEqualToString:@"PSSwitchCell"]){
-            
-	 		NSString *key = obj[@"key"];
-            NSString *label = obj[@"label"];
-			NSString *description = obj[@"description"];
-            BOOL isDefault = [obj[@"default"] boolValue];
-			id facade = nil;
-            if (isDefault) {
-                
-                NSString *domain = obj[@"defaults"];
-                NSString *postNotification = obj[@"PostNotification"];
-				facade = [[NSClassFromString(@"TVSettingsPreferenceFacade") alloc] initWithDomain:domain notifyChanges:TRUE];
- 			
-
-            }
-            
-			TSKSettingItem *settingsItem = [TSKSettingItem toggleItemWithTitle:label description:description representedObject:facade keyPath:key onTitle:nil offTitle:nil];
-			NSLog(@"created settings item: %@", settingsItem);
-
-			[currentGroupItems addObject:settingsItem];
-            NSLog(@"currentGroupItems: %@", currentGroupItems);
-        
-        } else if ([cell isEqualToString:@"PSEditTextCell"]) {
-        
-			NSString *key = obj[@"key"];
-            NSString *label = obj[@"label"];
-			NSString *description = obj[@"description"];
-			NSString *domain = obj[@"defaults"];
-            BOOL isDefault = [obj[@"default"] boolValue];
-            NSString *keyboard = obj[@"keyboard"];
-            NSString *autoCaps = obj[@"autoCaps"];
-            NSString *placeholder = obj[@"placeholder"];
-            NSString *suffix = obj[@"suffix"];
-            NSString *bestGuess = obj[@"bestGuess"];
-            BOOL noAutoCorrect = [obj[@"noAutoCorrect"] boolValue];
-            BOOL isIP = [obj[@"isIP"] boolValue];
-            BOOL isURL = [obj[@"isURL"] boolValue];
-            BOOL isNumeric = [obj[@"isNumeric"] boolValue];
-            BOOL isDecimalPad = [obj[@"isDecimalPad"] boolValue];
-            BOOL isEmail = [obj[@"isEmail"] boolValue];
-            NSString *okTitle = obj[@"okTitle"];
-            NSString *cancelTitle = obj[@"cancelTitle"];
-
-		    NSLog(@"DDBSettings: main bundle: %@", [NSBundle bundleForClass:self.class]);
-   
-			id facade = [[NSClassFromString(@"TVSettingsPreferenceFacade") alloc] initWithDomain:domain notifyChanges:TRUE];
- 		    TSKSettingItem *textEntryItem = [TSKSettingItem actionItemWithTitle:label description:description representedObject:facade keyPath:key target:self action:@selector(showViewController:)];
-   		    [textEntryItem setLocalizedValue:@"TEST"]; 
-           
-            [currentGroupItems addObject:settingsItem];
-            
-        }
-    }];
-    
-
-    return groups;
-}
-*/
+		/
 
 -(id)previewForItemAtIndexPath:(NSIndexPath *)indexPath {
 
