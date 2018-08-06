@@ -25,6 +25,14 @@
 
 @interface TSKSettingItem (lazyIcons) 
 
+
+@property (nonatomic, strong) NSDictionary *keyboardDetails; 
 @property (nonatomic, strong) UIImage *itemIcon;
+
+@end
+
+@interface TSKViewController (science)
+
+- (NSArray *)menuItemsFromItems:(NSArray *)items;
 
 @end
