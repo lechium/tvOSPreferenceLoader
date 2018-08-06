@@ -103,7 +103,7 @@ There is a likely a more elegant and proper way to do this, but it works for now
             BOOL isDefault = [obj[@"default"] boolValue];
 			NSArray *availableValues = obj[@"availableValues"];
 			id facade = [[NSClassFromString(@"TVSettingsPreferenceFacade") alloc] initWithDomain:domain notifyChanges:TRUE];
-			TSKSettingItem *multiItem = [TSKSettingItem multiValueItemWithTitle:label description:description representedObject:facade keyPath:key availableValues:@[@"11.1", @"11.2", @"11.3", @"11.4"]];
+			TSKSettingItem *multiItem = [TSKSettingItem multiValueItemWithTitle:label description:description representedObject:facade keyPath:key availableValues:availableValues];
 
  		    [currentGroupItems addObject:multiItem];
 
