@@ -19,6 +19,12 @@
 #import "TVSettingsPreferenceFacade.h"
 #import "TVSettingsItemFactory.h"
 
+@interface TSKSettingGroup (lazyItems)
+
+- (void)addSettingItem:(TSKSettingItem *)item;
+
+@end
+
 @interface TVSettingsTweakViewController : TSKViewController
 
 @end
