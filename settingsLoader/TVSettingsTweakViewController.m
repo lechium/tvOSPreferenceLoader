@@ -36,6 +36,7 @@ There is a likely a more elegant and proper way to do this, but it works for now
     __block NSMutableArray *groups = [NSMutableArray new];
     __block NSString *currentGroupName = nil;
     __block NSMutableArray *currentGroupItems = [NSMutableArray new];
+	__block BOOL haveGroups = FALSE;
     [items enumerateObjectsUsingBlock:^(NSDictionary  *_Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
        
 	    NSString *cell = obj[@"cell"];
@@ -46,7 +47,7 @@ There is a likely a more elegant and proper way to do this, but it works for now
 			if (currentGroupItems.count < 1){ //we might not have any group items yet!
 				currentGroupName = label;
 				NSLog(@"no groups yet, starting with group name: %@", label);
-				
+				haveGroups = TRUE;
 
 			} else {
 				
@@ -109,7 +110,13 @@ There is a likely a more elegant and proper way to do this, but it works for now
 
 		}
     }];
-    
+    if (haveGroups == TRUE && groups.count == 0) {
+
+			TSKSettingGroup *groupItem = [TSKSettingGroup groupWithTitle:currentGroupName settingItems:currentGroupItems];
+            [groups addObject:groupItem];
+				
+
+	}
 
     return groups;
 }
@@ -146,6 +153,7 @@ There is a likely a more elegant and proper way to do this, but it works for now
 @property (nonatomic, strong) NSDictionary *rootPlist;
 @property (nonatomic, strong) NSString *ourDomain;
 @property (nonatomic, strong) NSArray *menuItems;
+@property (nonatomic, strong) UIImage *ourIcon;
 
 - (void)showTextFieldControllerForItem:(TSKSettingItem *)item;
 
@@ -232,6 +240,25 @@ There is a likely a more elegant and proper way to do this, but it works for now
 	}
 }
 
+-(id)previewForItemAtIndexPath:(NSIndexPath *)indexPath {
+
+
+	TSKPreviewViewController *previewItem = [super previewForItemAtIndexPath:indexPath];
+/*
+	TSKSettingGroup *currentGroup = self.settingGroups[indexPath.section];
+	TSKSettingItem *currentItem = currentGroup.settingItems[indexPath.row];
+	UIImage *icon = [currentItem itemIcon];
+	*/
+	UIImage *icon = [self ourIcon];
+	if (icon != nil) {
+		TSKVibrantImageView *imageView = [[TSKVibrantImageView alloc] initWithImage:icon];
+		[previewItem setContentView:imageView];
+	}
+	//NSLog(@"previewForItemAtIndexPath: %@", previewItem);
+	return previewItem;
+
+}
+
 
 @end
 
@@ -280,7 +307,10 @@ There is a likely a more elegant and proper way to do this, but it works for now
 - (NSArray *)preferenceBundleGroups {
 
     NSMutableArray *allTheSpecs = [NSMutableArray new];
-	NSArray *subpaths = [[NSFileManager defaultManager] subpathsOfDirectoryAtPath:@"/Library/PreferenceLoader/Preferences" error:NULL];
+
+	NSString *preferencesPath = @"/Library/PreferenceLoader/Preferences";
+
+	NSArray *subpaths = [[NSFileManager defaultManager] subpathsOfDirectoryAtPath:preferencesPath error:NULL];
 		for(NSString *item in subpaths) {
 			if(![[item pathExtension] isEqualToString:@"plist"]) continue;
 			NSLog(@"processing %@", item);
@@ -304,21 +334,32 @@ There is a likely a more elegant and proper way to do this, but it works for now
 			} else { //there isnt a bundle
 				NSString *label = entry[@"label"];
 				NSArray *items = plPlist[@"items"];
+				NSString *iconPath = entry[@"icon"];
+				NSString *description = entry[@"description"];
 				NSLog(@"items: %@", items);
 
 				NSLog(@"creating menu items!!");
-
+				NSLog(@"icon: %@", iconPath);
+				NSString *fullIconPath = [preferencesPath stringByAppendingPathComponent:iconPath];
+				UIImage *image = [UIImage imageWithContentsOfFile:fullIconPath];
+				NSLog(@"fullIconPath: %@", fullIconPath);
+				NSLog(@"image: %@", image);
 				//NSArray *specs = [self menuItemsFromItems:items];
 				//NSLog(@"created menu items: %@", specs);
 				
-				TSKSettingItem *settingsItem = [TSKSettingItem childPaneItemWithTitle:label description:nil representedObject:nil keyPath:nil childControllerBlock:^(id object) {
+				TSKSettingItem *settingsItem = [TSKSettingItem childPaneItemWithTitle:label description:description representedObject:nil keyPath:nil childControllerBlock:^(id object) {
         
 					NSLog(@"self: %@ object: %@", self, object);
 					//NSLog(@"still have menu items?: %@", specs);
 					PLCustomListViewController *controller = [PLCustomListViewController new];
+					if (image){
+						[controller setOurIcon:image];
+					}
+					//
 					[controller setMenuItems:items];
 					return controller;
    				}];
+				[settingsItem setItemIcon:image];
 				[allTheSpecs addObject:settingsItem];
 				NSLog(@"made item: %@", settingsItem);
 				//description:(id)arg2 representedObject:(id)arg3 keyPath:(id)arg4 childControllerBlock:((void(^childControllerBlock)(id object))completionBlock
