@@ -36,6 +36,7 @@ This is where it converts our plist entries into TSKSettingGroups/Items that can
     
     __block NSMutableArray *groups = [NSMutableArray new];
     __block NSString *currentGroupName = nil;
+    __block TSKSettingGroup *currentGroup = nil;
     __block NSMutableArray *currentGroupItems = [NSMutableArray new];
 	__block BOOL haveGroups = FALSE;
     [items enumerateObjectsUsingBlock:^(NSDictionary  *_Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
