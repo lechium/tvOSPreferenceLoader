@@ -76,7 +76,8 @@
 @property (assign,nonatomic) SEL playButtonAction;                                                     //@synthesize playButtonAction=_playButtonAction - In the implementation block
 @property (assign,nonatomic,weak) id target;                                                         //@synthesize target=_target - In the implementation block
 @property (nonatomic,retain) Class childControllerClass;                                               //@synthesize childControllerClass=_childControllerClass - In the implementation block
-@property (nonatomic,copy) id childControllerBlock;                                                    //@synthesize childControllerBlock=_childControllerBlock - In the implementation block
+//@property (nonatomic,copy) id childControllerBlock;                                                    //@synthesize childControllerBlock=_childControllerBlock - In the implementation block
+@property (copy, nonatomic) id (^childControllerBlock)(id theObject);
 @property (assign,nonatomic) BOOL shouldPresentChildController;                                        //@synthesize shouldPresentChildController=_shouldPresentChildController - In the implementation block
 @property (assign,nonatomic) BOOL canFocus;                                                            //@synthesize canFocus=_canFocus - In the implementation block
 @property (assign,getter=isEnabled,nonatomic) BOOL enabled;                                            //@synthesize enabled=_enabled - In the implementation block
@@ -89,7 +90,7 @@
 +(void)setValue:(id)arg1 forSettingItem:(id)arg2 ;
 +(id)actionItemWithTitle:(id)arg1 description:(id)arg2 representedObject:(id)arg3 keyPath:(id)arg4 target:(id)arg5 action:(SEL)arg6 ;
 +(id)childPaneItemWithTitle:(id)arg1 description:(id)arg2 representedObject:(id)arg3 keyPath:(id)arg4 childControllerClass:(Class)arg5 ;
-+(id)childPaneItemWithTitle:(id)arg1 description:(id)arg2 representedObject:(id)arg3 keyPath:(id)arg4 childControllerBlock:(/*^block*/id)arg5 ;
++(id)childPaneItemWithTitle:(id)arg1 description:(id)arg2 representedObject:(id)arg3 keyPath:(id)arg4 childControllerBlock:(id (^)(id object))completionBlock ;
 +(id)childPaneItemWithBundle:(id)arg1 ;
 +(id)titleItemWithTitle:(id)arg1 description:(id)arg2 representedObject:(id)arg3 keyPath:(id)arg4 ;
 +(id)textInputItemWithTitle:(id)arg1 description:(id)arg2 representedObject:(id)arg3 keyPath:(id)arg4 ;
@@ -137,9 +138,10 @@
 -(void)setAccessoryTypes:(unsigned long long)arg1 ;
 -(void)setSortsByTitle:(BOOL)arg1 ;
 -(void)setDeepLinkableWhenHidden:(BOOL)arg1 ;
--(id)childControllerBlock;
+//-(id)childControllerBlock;
+
 -(Class)childControllerClass;
--(void)setChildControllerBlock:(id)arg1 ;
+//-(void)setChildControllerBlock:(id)arg1 ;
 -(void)setEnabledInStoreDemoMode:(BOOL)arg1 ;
 -(void)setBundleLoader:(TSKBundleLoader *)arg1 ;
 -(TSKBundleLoader *)bundleLoader;

@@ -6,7 +6,6 @@
 
 //NOTE: This class is part of TVSettings.app and NOT the framework so can only be used from tweaks inside there
 
-#import "NSObject.h"
 
 @class NSString, TVSPreferences;
 
@@ -19,7 +18,7 @@
 
 @property(readonly, copy, nonatomic) NSString *containerPath; // @synthesize containerPath=_containerPath;
 @property(readonly, copy, nonatomic) NSString *domain; // @synthesize domain=_domain;
-- (void).cxx_destruct;	// IMP=0x0000000100012eec
+
 - (id)valueForUndefinedKey:(id)arg1;	// IMP=0x0000000100012e70
 - (void)setValue:(id)arg1 forUndefinedKey:(id)arg2;	// IMP=0x0000000100012d28
 - (id)_initWithDomain:(id)arg1 containerPath:(id)arg2 notifyChanges:(_Bool)arg3;	// IMP=0x0000000100012bd0

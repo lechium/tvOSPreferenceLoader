@@ -17,7 +17,7 @@ preferenceBundleGroups is called by loadSettingGroups which is the initial entry
 
 
 #import "TVSettingsTweakViewController.h"
-
+#import "TSKTextInputViewController.h"
 /**
 
 Add an itemIcon for TSKSettingItem, this is a lazy convenience to make it easier to set icons per item
@@ -38,6 +38,120 @@ There is a likely a more elegant and proper way to do this, but it works for now
 
 @end
 
+@interface PLCustomListViewController: TSKViewController
+
+@property (nonatomic, strong) NSDictionary *rootPlist;
+@property (nonatomic, strong) NSString *ourDomain;
+@property (nonatomic, strong) NSArray *menuItems;
+
+- (void)showTextFieldControllerForItem:(TSKSettingItem *)item withTitle:(NSString *)headerTitle;
+
+@end
+
+@implementation PLCustomListViewController
+
+- (TVSPreferences *)ourPreferences {
+    
+    return [TVSPreferences preferencesWithDomain:self.ourDomain];
+}
+
+- (id)loadSettingGroups
+{
+    
+    /*
+     
+     +[<TSKSettingItem: 0x1ad71bc88> toggleItemWithTitle:Automatically Update Apps description:(null) representedObject:<TVSettingsPreferenceFacade: 0x1c0438480> keyPath:AutoUpdatesEnabled onTitle:(null) offTitle:(null)]
+     */
+    NSLog(@"DDBSettings: main bundle: %@", [NSBundle bundleForClass:self.class]);
+   
+    id facade = [[NSClassFromString(@"TVSettingsPreferenceFacade") alloc] initWithDomain:@"com.nito.dalesdeadbug" notifyChanges:TRUE];
+    //[facade setValue:[NSNumber numberWithBool:TRUE] forUndefinedKey:@"Enabled"];
+    //[facade setValue:@"11.1" forUndefinedKey:@"SpoofVersion"];
+    //[facade setValue:@"TextTest" forUndefinedKey:@"TextTest"];
+    
+    NSMutableArray *_backingArray = [NSMutableArray new];
+    TSKSettingItem *toggleItem = [TSKSettingItem toggleItemWithTitle:@"Version spoofing" description:@"Whether or not to spoof a higher OS version to install officially unsupported application versions. " representedObject:facade keyPath:@"Enabled" onTitle:nil offTitle:nil];
+    
+    
+    //TSKTextInputViewController.h
+    //Class TSKTIVC = NSClassFromString(@"TSKTextInputViewController");
+    
+   
+    //TSKSettingItem *textEntryItem = [TSKSettingItem textInputItemWithTitle:@"Tests text entry" description:@"This is a test" representedObject:testObject keyPath:nil];
+    //+(id)actionItemWithTitle:(id)arg1 description:(id)arg2 representedObject:(id)arg3 keyPath:(id)arg4 target:(id)arg5 action:(SEL)arg6
+    //[testObject setEditingItem:textEntryItem];
+    
+    TSKSettingItem *textEntryItem = [TSKSettingItem actionItemWithTitle:@"Tests text entry" description:@"This is a test" representedObject:facade keyPath:@"TextTest" target:self action:@selector(showViewController:)];
+    [textEntryItem setLocalizedValue:@"TEST"];
+    //:+[<TSKSettingItem: 0x1b48d3c88> actionItemWithTitle:Sleep Now description:(null) representedObject:(null) keyPath:(null) target:<TVSettingsMainViewController: 0x15204d600> action:_sleepNow:]
+    //[textEntryItem set]
+
+    TSKSettingItem *multiItem = [TSKSettingItem multiValueItemWithTitle:@"Spoofed Version" description:@"The version you are going to spoof." representedObject:facade keyPath:@"SpoofVersion" availableValues:@[@"11.1", @"11.2", @"11.3", @"11.4"]];
+    TSKSettingGroup *group = [TSKSettingGroup groupWithTitle:nil settingItems:@[toggleItem, multiItem, textEntryItem]];
+    //[_backingArray addObject:group];
+    [_backingArray addObjectsFromArray:self.menuItems];
+	TSKSettingGroup *group1 = self.menuItems[0];
+	NSLog(@"settings: %@", group1.settingItems);
+	[self setValue:_backingArray forKey:@"_settingGroups"];
+    
+    return _backingArray;
+    
+}
+
+- (id)loadSettingGroups2 {
+
+	NSLog(@"PLCustomListViewController:loadSettingGroups: %@", self.menuItems);
+	id items = [super loadSettingGroups];
+	[self setValue:self.menuItems forKey:@"_settingGroups"];
+	return self.menuItems;
+
+}
+
+- (void)showTextFieldControllerForItem:(TSKSettingItem *)item withTitle:(NSString *)headerTitle {
+    
+    NSLog(@"PrefLoader: showTextFieldControllerForItem: %@", item );
+    
+    TSKTextInputViewController *textInputViewController = [[TSKTextInputViewController alloc] init];
+    textInputViewController.headerText = headerTitle;
+    textInputViewController.initialText = [[self ourPreferences] stringForKey:item.keyPath];
+    
+    if ([textInputViewController respondsToSelector:@selector(setEditingDelegate:)]){
+        
+        [textInputViewController setEditingDelegate:self];
+    }
+    [textInputViewController setEditingItem:item];
+    [self.navigationController pushViewController:textInputViewController animated:TRUE];
+}
+
+- (void)editingController:(id)arg1 didCancelForSettingItem:(TSKSettingItem *)arg2 {
+    
+    NSLog(@"PrefLoader: editingController %@ didCancelForSettingItem:%@", arg1, arg2);
+    [super editingController:arg1 didCancelForSettingItem:arg2];
+}
+- (void)editingController:(id)arg1 didProvideValue:(id)arg2 forSettingItem:(TSKSettingItem *)arg3 {
+    
+    NSLog(@"PrefLoader: editingController %@ didProvideValue: %@ forSettingItem: %@", arg1, arg2, arg3);
+ 
+    [super editingController:arg1 didProvideValue:arg2 forSettingItem:arg3];
+ 
+    TVSPreferences *prefs = [TVSPreferences preferencesWithDomain:@"com.nito.dalesdeadbug"];
+    
+    NSLog(@"PrefLoader: prefs: %@", prefs);
+    //[arg3 setLocalizedValue:arg2];
+    [[self ourPreferences] setObject:arg2 forKey:arg3.keyPath];
+    NSLog(@"PrefLoader: setObjetct: arg2 forKey: %@", arg3.keyPath);
+    [[self ourPreferences] synchronize];
+    NSLog(@"PrefLoader: after prefs sync");
+
+    
+    
+}
+
+
+@end
+
+
+
 @interface TVSettingsTweakViewController() {
 
 	NSMutableArray *_iconArray; //currently unused, likey to be pruned out
@@ -45,6 +159,7 @@ There is a likely a more elegant and proper way to do this, but it works for now
 }
 
 @end
+
 
 
 @implementation TVSettingsTweakViewController
@@ -96,11 +211,33 @@ There is a likely a more elegant and proper way to do this, but it works for now
 			//if(![PSSpecifier environmentPassesPreferenceLoaderFilter:[entry objectForKey:PLFilterKey]]) continue;
 
 			NSArray *specs = [self specifiersFromEntry:entry sourcePreferenceLoaderBundlePath:[fullPath stringByDeletingLastPathComponent] title:[[item lastPathComponent] stringByDeletingPathExtension]];
-			if(!specs) continue;
+			if(specs.count > 0) {
 
-			NSLog(@"appending to the array!");
+				NSLog(@"appending to the array!");
 
-            [allTheSpecs addObjectsFromArray:specs];
+            	[allTheSpecs addObjectsFromArray:specs];
+			} else { //there isnt a bundle
+				NSString *label = entry[@"label"];
+				NSArray *items = plPlist[@"items"];
+				NSLog(@"items: %@", items);
+
+				NSLog(@"creating menu items!!");
+
+				NSArray *specs = [self menuItemsFromItems:items];
+				NSLog(@"created menu items: %@", specs);
+				
+				TSKSettingItem *settingsItem = [TSKSettingItem childPaneItemWithTitle:label description:nil representedObject:nil keyPath:nil childControllerBlock:^(id object) {
+        
+					NSLog(@"self: %@ object: %@", self, object);
+					NSLog(@"still have menu items?: %@", specs);
+					PLCustomListViewController *controller = [PLCustomListViewController new];
+					[controller setMenuItems:specs];
+					return controller;
+   				}];
+				[allTheSpecs addObject:settingsItem];
+				NSLog(@"made item: %@", settingsItem);
+				//description:(id)arg2 representedObject:(id)arg3 keyPath:(id)arg4 childControllerBlock:((void(^childControllerBlock)(id object))completionBlock
+			}
 		}
     return allTheSpecs;
 }
@@ -231,7 +368,7 @@ NOTE: currently only supports bundles loading custom code, its on the todo to ge
 		}
 	} else {
 	
-        NSLog(@"not a bundle! this feature is currently unsupported");
+        NSLog(@"not a bundle! this feature is currently unsupported entry: %@ path: %@", entry, prefBundle);
 
     /*
     	// There really should only be one specifier.
@@ -254,6 +391,122 @@ NOTE: currently only supports bundles loading custom code, its on the todo to ge
 	}
 
 	return items;
+}
+
+- (NSArray *)menuItemsFromItems:(NSArray *)items {
+    /* these plists are kind of dumb imo, you need to loop through the items but the way you dilineate groups is they start and stop when the next group is found.
+    
+    ie Group 1 | Item 1 | Item 2 | Group 2 | Item 3 | Item 4 | Group 3 ... so item 1&2 would be in group 1, 3 & 4 in Group 2 etc..
+     
+     <dict>
+     <key>cell</key>
+     <string>PSGroupCell</string>
+     <key>alignment</key>
+     <integer>1</integer>
+     <key>label</key>
+     <string>Welcome to No Update</string>
+     </dict>
+     
+     <key>cell</key>
+     <string>PSSwitchCell</string>
+     <key>default</key>
+     <true/>
+     <key>defaults</key>
+     <string>com.greensnow.noupdate</string>
+     <key>key</key>
+     <string>showinstalled</string>
+     <key>label</key>
+     <string>Show its Installed</string>
+     <key>PostNotification</key>
+     <string>com.greensnow.noupdate/ReloadPrefs</string>
+     
+    */
+    
+    __block NSMutableArray *groups = [NSMutableArray new];
+    __block NSString *currentGroupName = nil;
+    __block NSMutableArray *currentGroupItems = [NSMutableArray new];
+    [items enumerateObjectsUsingBlock:^(NSDictionary  *_Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+       
+	   NSLog(@"processing objectL %@", obj);
+
+        NSString *cell = obj[@"cell"];
+        NSString *label = obj[@"label"];
+		
+        if ([cell isEqualToString:@"PSGroupCell"]){
+            
+			if (currentGroupItems.count < 1){ //we might not have any group items yet!
+				currentGroupName = label;
+				NSLog(@"no groups yet, starting with group name: %@", label);
+				
+
+			} else {
+				
+				NSLog(@"we already have a group: %@ adding items %@", currentGroupName, currentGroupItems);
+				TSKSettingGroup *groupItem = [TSKSettingGroup groupWithTitle:currentGroupName settingItems:currentGroupItems];
+            	[groups addObject:groupItem];
+				currentGroupName = label;
+				NSLog(@"starting a new group!", currentGroupName);
+				[currentGroupItems removeAllObjects];
+			}
+         
+            
+            
+        } else if ([cell isEqualToString:@"PSSwitchCell"]){
+            
+	 		NSString *key = obj[@"key"];
+            NSString *label = obj[@"label"];
+			NSString *description = obj[@"description"];
+            BOOL isDefault = [obj[@"default"] boolValue];
+			id facade = nil;
+            if (isDefault) {
+                
+                NSString *domain = obj[@"defaults"];
+                NSString *postNotification = obj[@"PostNotification"];
+				facade = [[NSClassFromString(@"TVSettingsPreferenceFacade") alloc] initWithDomain:domain notifyChanges:TRUE];
+ 			
+
+            }
+            
+			TSKSettingItem *settingsItem = [TSKSettingItem toggleItemWithTitle:label description:description representedObject:facade keyPath:key onTitle:nil offTitle:nil];
+			NSLog(@"created settings item: %@", settingsItem);
+
+			[currentGroupItems addObject:settingsItem];
+            NSLog(@"currentGroupItems: %@", currentGroupItems);
+        
+        } else if ([cell isEqualToString:@"PSEditTextCell"]) {
+        
+			NSString *key = obj[@"key"];
+            NSString *label = obj[@"label"];
+			NSString *description = obj[@"description"];
+			NSString *domain = obj[@"defaults"];
+            BOOL isDefault = [obj[@"default"] boolValue];
+            NSString *keyboard = obj[@"keyboard"];
+            NSString *autoCaps = obj[@"autoCaps"];
+            NSString *placeholder = obj[@"placeholder"];
+            NSString *suffix = obj[@"suffix"];
+            NSString *bestGuess = obj[@"bestGuess"];
+            BOOL noAutoCorrect = [obj[@"noAutoCorrect"] boolValue];
+            BOOL isIP = [obj[@"isIP"] boolValue];
+            BOOL isURL = [obj[@"isURL"] boolValue];
+            BOOL isNumeric = [obj[@"isNumeric"] boolValue];
+            BOOL isDecimalPad = [obj[@"isDecimalPad"] boolValue];
+            BOOL isEmail = [obj[@"isEmail"] boolValue];
+            NSString *okTitle = obj[@"okTitle"];
+            NSString *cancelTitle = obj[@"cancelTitle"];
+
+		    NSLog(@"DDBSettings: main bundle: %@", [NSBundle bundleForClass:self.class]);
+   
+			id facade = [[NSClassFromString(@"TVSettingsPreferenceFacade") alloc] initWithDomain:domain notifyChanges:TRUE];
+ 		    TSKSettingItem *textEntryItem = [TSKSettingItem actionItemWithTitle:label description:description representedObject:facade keyPath:key target:self action:@selector(showViewController:)];
+   		    [textEntryItem setLocalizedValue:@"TEST"]; 
+           
+            [currentGroupItems addObject:settingsItem];
+            
+        }
+    }];
+    
+
+    return groups;
 }
 
 

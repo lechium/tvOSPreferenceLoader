@@ -16,7 +16,8 @@
 #import "TSKTableViewController.h"
 #import "TSKViewController.h"
 #import <objc/runtime.h>
-
+#import "TVSettingsPreferenceFacade.h"
+#import "TVSettingsItemFactory.h"
 
 @interface TVSettingsTweakViewController : TSKViewController
 
