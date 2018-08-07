@@ -27,6 +27,8 @@
 
 @interface TVSettingsTweakViewController : TSKViewController
 
+@property (nonatomic, strong) UIImage *defaultImage;
+
 @end
 
 @interface TSKSettingItem (lazyIcons) 

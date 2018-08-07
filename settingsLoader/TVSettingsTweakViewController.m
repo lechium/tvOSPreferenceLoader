@@ -247,6 +247,9 @@ There is a likely a more elegant and proper way to do this, but it works for now
     [super editingController:arg1 didProvideValue:arg2 forSettingItem:arg3];
  
 	if (self.ourDomain != nil){
+		//our domain wont be set if its a multi picker, only text entry since we need to handle this
+		//instance completely manually
+
     	//NSLog(@"PrefLoader: prefs: %@", prefs);
     	//[arg3 setLocalizedValue:arg2];
     	[[self ourPreferences] setObject:arg2 forKey:arg3.keyPath];
@@ -279,7 +282,7 @@ There is a likely a more elegant and proper way to do this, but it works for now
 
 @interface TVSettingsTweakViewController() {
 
-	NSMutableArray *_iconArray; //currently unused, likey to be pruned out
+	//in case we ever want / need any private vars;
 
 }
 
@@ -292,13 +295,6 @@ There is a likely a more elegant and proper way to do this, but it works for now
 //initial entry point for any type of TSKViewController (which we inherit from)
 
 - (id)loadSettingGroups {
-    
-	if (_iconArray) {
-		[_iconArray removeAllObjects];
-		_iconArray	= nil;
-	}
-
-	_iconArray = [NSMutableArray new];
 
     NSMutableArray *_backingArray = [NSMutableArray new];
     NSArray *prefBundleGroups = [self preferenceBundleGroups];
@@ -357,19 +353,20 @@ There is a likely a more elegant and proper way to do this, but it works for now
 				UIImage *image = [UIImage imageWithContentsOfFile:fullIconPath];
 				//NSLog(@"fullIconPath: %@", fullIconPath);
 				//NSLog(@"image: %@", image);
-				//NSArray *specs = [self menuItemsFromItems:items];
-				//NSLog(@"created menu items: %@", specs);
 				
+				//we need to configure this settings item later, so we use the childBlocks based init
+
 				TSKSettingItem *settingsItem = [TSKSettingItem childPaneItemWithTitle:label description:description representedObject:nil keyPath:nil childControllerBlock:^(id object) {
         
 					//NSLog(@"self: %@ object: %@", self, object);
-					//NSLog(@"still have menu items?: %@", specs);
+				
+
 					PLCustomListViewController *controller = [PLCustomListViewController new];
 					if (image){
 						[controller setOurIcon:image];
 					}
 					[controller setTitle:label];
-					[controller setMenuItems:items];
+					[controller setMenuItems:items]; //these are just dictionary menu items loaded from our plist, will be converted later
 					return controller;
    				}];
 				[settingsItem setItemIcon:image];
@@ -488,6 +485,8 @@ There is a likely a more elegant and proper way to do this, but it works for now
 	return items;
  }
 
+
+//FIXME: if the item doesn't specify an icon the one from above carries over to here..
 -(id)previewForItemAtIndexPath:(NSIndexPath *)indexPath {
 
 	TSKPreviewViewController *previewItem = [super previewForItemAtIndexPath:indexPath];
@@ -496,10 +495,20 @@ There is a likely a more elegant and proper way to do this, but it works for now
 	//NSBundle *currentBundle = currentItem.bundleLoader.bundle;
 	//NSLog(@"currentBundle: %@", currentBundle);
 	//added a category to make item icons easier to get and set per item.
+	TSKVibrantImageView *imageView = [previewItem contentView];
 	UIImage *icon = [currentItem itemIcon];
 	if (icon != nil) {
-		TSKVibrantImageView *imageView = [[TSKVibrantImageView alloc] initWithImage:icon];
-		[previewItem setContentView:imageView];
+		
+		if (self.defaultImage == nil) {
+			self.defaultImage = imageView.image;
+		}
+		[imageView setImage:icon];
+		//TSKVibrantImageView *imageView = [[TSKVibrantImageView alloc] initWithImage:icon];
+		//[previewItem setContentView:imageView];
+	} else {
+		if (self.defaultImage != nil){
+			[imageView setImage:self.defaultImage];
+		}
 	}
 	//NSLog(@"previewForItemAtIndexPath: %@", previewItem);
 	return previewItem;
