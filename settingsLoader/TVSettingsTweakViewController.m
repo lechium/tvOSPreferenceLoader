@@ -498,13 +498,12 @@ There is a likely a more elegant and proper way to do this, but it works for now
 	TSKVibrantImageView *imageView = [previewItem contentView];
 	UIImage *icon = [currentItem itemIcon];
 	if (icon != nil) {
-		
+		//make a backup of the default image so any item that DOESNT have one can change back to this one. this is shitty-find a smarter way to do this.
 		if (self.defaultImage == nil) {
 			self.defaultImage = imageView.image;
 		}
 		[imageView setImage:icon];
-		//TSKVibrantImageView *imageView = [[TSKVibrantImageView alloc] initWithImage:icon];
-		//[previewItem setContentView:imageView];
+
 	} else {
 		if (self.defaultImage != nil){
 			[imageView setImage:self.defaultImage];
