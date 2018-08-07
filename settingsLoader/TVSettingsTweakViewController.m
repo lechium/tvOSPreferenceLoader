@@ -36,7 +36,6 @@ This is where it converts our plist entries into TSKSettingGroups/Items that can
     
     __block NSMutableArray *groups = [NSMutableArray new];
     __block NSString *currentGroupName = nil;
-    __block TSKSettingGroup *currentGroup = nil;
     __block NSMutableArray *currentGroupItems = [NSMutableArray new];
 	__block BOOL haveGroups = FALSE;
     [items enumerateObjectsUsingBlock:^(NSDictionary  *_Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
@@ -111,18 +110,17 @@ This is where it converts our plist entries into TSKSettingGroups/Items that can
  		    [currentGroupItems addObject:multiItem];
 
 		}
+		//Since the groups are created when we find the next one, if we are at the last (or only) group we need to create one for the remaining items
+		//NSLog(@"idx: %lu count: %lu", idx, items.count);
+		if (idx == items.count-1){
+
+			//NSLog(@"creating final group: %@ with items: %@", currentGroupName, currentGroupItems);
+			TSKSettingGroup *groupItem = [TSKSettingGroup groupWithTitle:currentGroupName settingItems:currentGroupItems];
+			[groups addObject:groupItem];
+		}
+
     }];
 	
-	//the logic above is a bit janky, if we only have one group nothing ever gets created (since we create the groups at the start of the next)
-	//FIXME: this means we will miss first and last groups when theres more than 1
-    if (haveGroups == TRUE && groups.count == 0) {
-
-			TSKSettingGroup *groupItem = [TSKSettingGroup groupWithTitle:currentGroupName settingItems:currentGroupItems];
-            [groups addObject:groupItem];
-				
-
-	}
-
     return groups;
 }
 
@@ -195,7 +193,6 @@ There is a likely a more elegant and proper way to do this, but it works for now
 	NSArray *items = [self menuItemsFromItems:self.menuItems];
     [_backingArray addObjectsFromArray:items];
 	[self setValue:_backingArray forKey:@"_settingGroups"];
-    
     return _backingArray;
     
 }
@@ -210,6 +207,8 @@ There is a likely a more elegant and proper way to do this, but it works for now
 	NSString *label = obj[@"label"];
 	NSString *defaults = obj[@"defaults"];
 	[self setOurDomain:defaults];
+
+	//these are additional keyboard input options that it would be nice to support in the future
     /*
 	NSString *keyboard = obj[@"keyboard"];
     NSString *autoCaps = obj[@"autoCaps"];
@@ -369,7 +368,7 @@ There is a likely a more elegant and proper way to do this, but it works for now
 					if (image){
 						[controller setOurIcon:image];
 					}
-					//
+					[controller setTitle:label];
 					[controller setMenuItems:items];
 					return controller;
    				}];
