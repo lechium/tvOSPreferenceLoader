@@ -485,7 +485,9 @@ There is a likely a more elegant and proper way to do this, but it works for now
 	
         NSLog(@"not a bundle! this feature is currently unsupported entry: %@ path: %@", entry, prefBundle);
 
-		/
+	}
+	return items;
+ }
 
 -(id)previewForItemAtIndexPath:(NSIndexPath *)indexPath {
 
