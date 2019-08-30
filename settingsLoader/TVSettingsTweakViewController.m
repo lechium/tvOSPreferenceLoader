@@ -18,6 +18,7 @@ preferenceBundleGroups is called by loadSettingGroups which is the initial entry
 
 #import "TVSettingsTweakViewController.h"
 #import "TSKTextInputViewController.h"
+#import "NSTask.h"
 
 /*
 
@@ -60,8 +61,6 @@ This is where it converts our plist entries into TSKSettingGroups/Items that can
 				[currentGroupItems removeAllObjects];
 			}
          
-            
-            
         } else if ([cell isEqualToString:@"PSSwitchCell"]){
             
 	 		NSString *key = obj[@"key"];
@@ -84,16 +83,22 @@ This is where it converts our plist entries into TSKSettingGroups/Items that can
 			[currentGroupItems addObject:settingsItem];
             //NSLog(@"currentGroupItems: %@", currentGroupItems);
         
-        } else if ([cell isEqualToString:@"PSEditTextCell"]) {
-        
+        } else if ([cell isEqualToString:@"PSEditTextCell"] || [cell isEqualToString:@"PSSecureEditTextCell"]) {
+
+			BOOL secure = [cell containsString:@"Secure"];
 			NSString *key = obj[@"key"];
             NSString *label = obj[@"label"];
 			NSString *description = obj[@"description"];
 			NSString *domain = obj[@"defaults"];
             BOOL isDefault = [obj[@"default"] boolValue];
+
         	id facade = [[NSClassFromString(@"TVSettingsPreferenceFacade") alloc] initWithDomain:domain notifyChanges:TRUE];
- 		    TSKSettingItem *textEntryItem = [TSKSettingItem actionItemWithTitle:label description:description representedObject:facade keyPath:key target:self action:@selector(showTextFieldControllerForItem:)];
-   		    [textEntryItem setKeyboardDetails:obj];
+ 		    //TSKSettingItem *textEntryItem = [TSKSettingItem actionItemWithTitle:label description:description representedObject:facade keyPath:key target:self action:@selector(showTextFieldControllerForItem:)];
+   		    TSKTextInputSettingItem *textEntryItem =  [TSKTextInputSettingItem textInputItemWithTitle:label description:description representedObject:facade keyPath:key];
+			if(secure) {
+				textEntryItem.secure = TRUE;
+			}
+			[textEntryItem setKeyboardDetails:obj];
             [currentGroupItems addObject:textEntryItem];
             
         } else if ([cell isEqualToString:@"PSMultiItemCell"]) { //new tvOS only special addition :D
@@ -109,7 +114,18 @@ This is where it converts our plist entries into TSKSettingGroups/Items that can
 
  		    [currentGroupItems addObject:multiItem];
 
-		}
+        } else if ([cell isEqualToString:@"PSButtonCell"]) {
+            NSString *action = obj[@"action"];
+            NSString *label = obj[@"label"];
+            NSString *description = obj[@"description"];
+            SEL ourAction = NSSelectorFromString(action);
+            if (![self respondsToSelector:ourAction]){
+                ourAction = NSSelectorFromString(@"showMissingActionAlert");
+            }
+            TSKSettingItem *actionItem = [TSKSettingItem actionItemWithTitle:label description:description representedObject:nil keyPath:nil target:self action:ourAction];
+            
+            [currentGroupItems addObject:actionItem];
+        }
 		//Since the groups are created when we find the next one, if we are at the last (or only) group we need to create one for the remaining items
 		//NSLog(@"idx: %lu count: %lu", idx, items.count);
 		if (idx == items.count-1){
@@ -177,10 +193,31 @@ There is a likely a more elegant and proper way to do this, but it works for now
 @property (nonatomic, strong) UIImage *ourIcon;
 
 - (void)showTextFieldControllerForItem:(TSKSettingItem *)item;
-
+- (void)relaunchBackboardd;
+- (void)showMissingActionAlert;
 @end
 
 @implementation PLCustomListViewController
+
+- (void)showMissingActionAlert {
+    
+    UIAlertController *notFoundAlert = [UIAlertController alertControllerWithTitle:@"Action not found" message:@"Your setting's bundle attempted to call an action that doesn't exist" preferredStyle:UIAlertControllerStyleAlert];
+   
+    UIAlertAction *cancel = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleCancel handler:nil];
+    [notFoundAlert addAction:cancel];
+    
+    dispatch_async(dispatch_get_main_queue(), ^{
+        
+        [self presentViewController:notFoundAlert animated:TRUE completion:nil];
+        
+    });
+}
+
+- (void)relaunchBackboardd {
+    
+    [NSTask launchedTaskWithLaunchPath:@"/usr/bin/killall" arguments:@[@"-9", @"backboardd"]];
+    
+}
 
 - (TVSPreferences *)ourPreferences {
     

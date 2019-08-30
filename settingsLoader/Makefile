@@ -1,10 +1,10 @@
 ARCHS = arm64
 TARGET = appletv
 export GO_EASY_ON_ME=1
-export SDKVERSION=10,1
-THEOS_DEVICE_IP=etv.local
+export SDKVERSION=10.1
+DEBUG=0
+THEOS_DEVICE_IP=twelve.local
 include $(THEOS)/makefiles/common.mk
-
 TWEAK_NAME = settingsLoader
 settingsLoader_FILES = Tweak.xm TVSettingsTweakViewController.m
 settingsLoader_LIBRARIES = substrate

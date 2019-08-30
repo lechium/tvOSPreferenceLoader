@@ -18,6 +18,8 @@
 #import <objc/runtime.h>
 #import "TVSettingsPreferenceFacade.h"
 #import "TVSettingsItemFactory.h"
+#import "TSKTextInputSettingItem.h"
+
 
 @interface TSKSettingGroup (lazyItems)
 

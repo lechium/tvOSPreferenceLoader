@@ -30,21 +30,21 @@
 @property (nonatomic,copy) NSString * recentsCategory;                             //@synthesize recentsCategory=_recentsCategory - In the implementation block
 @property (assign,nonatomic) BOOL useFormatterError;                               //@synthesize useFormatterError=_useFormatterError - In the implementation block
 +(id)textInputItemWithTitle:(id)arg1 description:(id)arg2 representedObject:(id)arg3 keyPath:(id)arg4 ;
--(void)setSecure:(BOOL)arg1 ;
--(BOOL)isSecure;
--(long long)autocapitalizationType;
--(void)setAutocapitalizationType:(long long)arg1 ;
--(long long)autocorrectionType;
--(void)setAutocorrectionType:(long long)arg1 ;
--(long long)keyboardType;
--(void)setKeyboardType:(long long)arg1 ;
+//-(void)setSecure:(BOOL)arg1 ;
+//-(BOOL)isSecure;
+//-(long long)autocapitalizationType;
+//-(void)setAutocapitalizationType:(long long)arg1 ;
+//-(long long)autocorrectionType;
+//-(void)setAutocorrectionType:(long long)arg1 ;
+//-(long long)keyboardType;
+//-(void)setKeyboardType:(long long)arg1 ;
 -(id)localizedValue;
 -(id)initWithTitle:(id)arg1 description:(id)arg2 representedObject:(id)arg3 keyPath:(id)arg4 readOnly:(BOOL)arg5 accessoryTypes:(unsigned long long)arg6 childControllerClass:(Class)arg7 ;
--(NSString *)localizedTextEntryInstructions;
--(void)setLocalizedTextEntryInstructions:(NSString *)arg1 ;
--(NSString *)recentsCategory;
--(void)setRecentsCategory:(NSString *)arg1 ;
--(BOOL)useFormatterError;
--(void)setUseFormatterError:(BOOL)arg1 ;
+//-(NSString *)localizedTextEntryInstructions;
+//-(void)setLocalizedTextEntryInstructions:(NSString *)arg1 ;
+//-(NSString *)recentsCategory;
+//-(void)setRecentsCategory:(NSString *)arg1 ;
+//-(BOOL)useFormatterError;
+//-(void)setUseFormatterError:(BOOL)arg1 ;
 @end
 
