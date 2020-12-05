@@ -20,6 +20,43 @@ preferenceBundleGroups is called by loadSettingGroups which is the initial entry
 #import "TSKTextInputViewController.h"
 #import "NSTask.h"
 
+/* {{{ Constants */
+static NSString *const PLBundleKey = @"pl_bundle";
+NSString *const PLFilterKey = @"pl_filter";
+static NSString *const PLAlternatePlistNameKey = @"pl_alt_plist_name";
+/* }}} */
+
+@interface TSKSettingGroup (libprefs)
++ (BOOL)environmentPassesPreferenceLoaderFilter:(NSDictionary *)filter;
+@end
+
+@implementation TSKSettingGroup (libprefs)
++ (BOOL)environmentPassesPreferenceLoaderFilter:(NSDictionary *)filter {
+    NSLog(@"[tvPreferenceLoader] Checking filter %@", filter);
+
+    if(!filter) return YES;
+    bool valid = YES;
+
+    NSArray *coreFoundationVersion = [filter objectForKey:@"CoreFoundationVersion"];
+    if(coreFoundationVersion && coreFoundationVersion.count > 0) {
+        NSNumber *lowerBound = [coreFoundationVersion objectAtIndex:0];
+        NSNumber *upperBound = coreFoundationVersion.count > 1 ? [coreFoundationVersion objectAtIndex:1] : nil;
+        NSLog(@"[tvPreferenceLoader]%@ <= CF Version (%f) < %@", lowerBound, kCFCoreFoundationVersionNumber, upperBound);
+        valid = valid && (kCFCoreFoundationVersionNumber >= lowerBound.floatValue);
+
+        if(upperBound)
+            valid = valid && (kCFCoreFoundationVersionNumber < upperBound.floatValue);
+    }
+    NSLog(valid ? @"[tvPreferenceLoader] Filter matched" : @"[tvPreferenceLoader] Filter did not match");
+    return valid;
+}
+
+- (NSBundle *)preferenceLoaderBundle {
+    return [self propertyForKey:PLBundleKey];
+}
+
+@end
+
 /*
 
 This is where it converts our plist entries into TSKSettingGroups/Items that can actually be displayed in TVSettings. If applicable.
@@ -362,14 +399,13 @@ There is a likely a more elegant and proper way to do this, but it works for now
 			NSLog(@"processing %@", item);
 			NSString *fullPath = [NSString stringWithFormat:@"/Library/PreferenceLoader/Preferences/%@", item];
 			NSDictionary *plPlist = [NSDictionary dictionaryWithContentsOfFile:fullPath];
-			//if(![PSSpecifier environmentPassesPreferenceLoaderFilter:[plPlist objectForKey:@"filter"] ?: [plPlist objectForKey:PLFilterKey]]) continue;
+			if(![TSKSettingGroup environmentPassesPreferenceLoaderFilter:[plPlist objectForKey:@"filter"] ?: [plPlist objectForKey:PLFilterKey]]) continue;
 
 			NSDictionary *entry = [plPlist objectForKey:@"entry"];
 			if(!entry) continue;
 			NSLog(@"found an entry key for %@!", item);
 
-            //TODO: Add support for specifier filtering.
-			//if(![PSSpecifier environmentPassesPreferenceLoaderFilter:[entry objectForKey:PLFilterKey]]) continue;
+			if(![TSKSettingGroup environmentPassesPreferenceLoaderFilter:[entry objectForKey:PLFilterKey]]) continue;
 
 			NSArray *specs = [self specifiersFromEntry:entry sourcePreferenceLoaderBundlePath:[fullPath stringByDeletingLastPathComponent] title:[[item lastPathComponent] stringByDeletingPathExtension]];
 			if(specs.count > 0) {
