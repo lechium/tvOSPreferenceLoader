@@ -19,6 +19,26 @@ preferenceBundleGroups is called by loadSettingGroups which is the initial entry
 #import "TVSettingsTweakViewController.h"
 #import "TSKTextInputViewController.h"
 #import "NSTask.h"
+#import <UIKit/UITextInputTraits.h>
+
+@interface UINavigationController (convenience)
+
+- (UIViewController *)previousViewController;
+
+@end
+
+@implementation UINavigationController (convenience)
+
+- (UIViewController *)previousViewController {
+    NSInteger vcCount = [[self viewControllers] count];
+    if (vcCount == 1){
+        return [self visibleViewController];
+    }
+    NSInteger desiredIndex = vcCount - 2;
+    return [self viewControllers][desiredIndex];
+}
+
+@end
 
 /* {{{ Constants */
 static NSString *const PLBundleKey = @"pl_bundle";
@@ -103,18 +123,17 @@ This is where it converts our plist entries into TSKSettingGroups/Items that can
 	 		NSString *key = obj[@"key"];
             NSString *label = obj[@"label"];
 			NSString *description = obj[@"description"];
-            BOOL isDefault = [obj[@"default"] boolValue];
+            BOOL defaultOn = [obj[@"default"] boolValue];
 			id facade = nil;
-            if (isDefault) {
-                
-                NSString *domain = obj[@"defaults"];
-                NSString *postNotification = obj[@"PostNotification"];
-				facade = [[NSClassFromString(@"TVSettingsPreferenceFacade") alloc] initWithDomain:domain notifyChanges:TRUE];
- 			
-
-            }
-            
+            NSString *domain = obj[@"defaults"];
+            NSString *postNotification = obj[@"PostNotification"];
+            facade = [[NSClassFromString(@"TVSettingsPreferenceFacade") alloc] initWithDomain:domain notifyChanges:TRUE];
 			TSKSettingItem *settingsItem = [TSKSettingItem toggleItemWithTitle:label description:description representedObject:facade keyPath:key onTitle:nil offTitle:nil];
+            if (defaultOn){
+                [settingsItem setDefaultValue:@1];
+            } else {
+                [settingsItem setDefaultValue:@0];
+            }
 			//NSLog(@"created settings item: %@", settingsItem);
 
 			[currentGroupItems addObject:settingsItem];
@@ -125,16 +144,59 @@ This is where it converts our plist entries into TSKSettingGroups/Items that can
 			BOOL secure = [cell containsString:@"Secure"];
 			NSString *key = obj[@"key"];
             NSString *label = obj[@"label"];
+            if (!label){
+                label = obj[@"prompt"];
+            }
 			NSString *description = obj[@"description"];
 			NSString *domain = obj[@"defaults"];
             BOOL isDefault = [obj[@"default"] boolValue];
-
+            NSString *keyboardType = obj[@"keyboard"]; //numbers or phone
+            NSString *autoCaps = obj[@"autoCaps"]; //sentences, words, all
+            BOOL isIP = [obj[@"isIP"] boolValue]; //use numbers keyboard
+            BOOL isURL = [obj[@"isURL"] boolValue]; //use URL keyboard
+            BOOL isNumeric = [obj[@"isNumeric"] boolValue]; //use numeric keyboard
+            BOOL isEmail = [obj[@"isEmail"] boolValue]; //use email keyboard
+            BOOL noAutoCorrect = [obj[@"noAutoCorrect"] boolValue]; //turn off auto-correct
+            
         	id facade = [[NSClassFromString(@"TVSettingsPreferenceFacade") alloc] initWithDomain:domain notifyChanges:TRUE];
- 		    //TSKSettingItem *textEntryItem = [TSKSettingItem actionItemWithTitle:label description:description representedObject:facade keyPath:key target:self action:@selector(showTextFieldControllerForItem:)];
+ 		   
    		    TSKTextInputSettingItem *textEntryItem =  [TSKTextInputSettingItem textInputItemWithTitle:label description:description representedObject:facade keyPath:key];
 			if(secure) {
 				textEntryItem.secure = TRUE;
 			}
+            if (keyboardType){
+                if ([keyboardType isEqualToString:@"numbers"]){
+                    [textEntryItem setKeyboardType:UIKeyboardTypeNumbersAndPunctuation];
+                } else if ([keyboardType isEqualToString:@"phone"]){
+                    [textEntryItem setKeyboardType:UIKeyboardTypePhonePad];
+                } else {
+                    [textEntryItem setKeyboardType:UIKeyboardTypeDefault];
+                }
+            }
+            if (autoCaps){
+                if ([autoCaps isEqualToString:@"sentences"]){
+                    [textEntryItem setAutocapitalizationType:UITextAutocapitalizationTypeSentences];
+                } else if ([autoCaps isEqualToString:@"words"]){
+                    [textEntryItem setAutocapitalizationType:UITextAutocapitalizationTypeWords];
+                } else if([autoCaps isEqualToString:@"all"]){
+                    [textEntryItem setAutocapitalizationType:UITextAutocapitalizationTypeAllCharacters];
+                }
+            }
+            if (isIP){
+                [textEntryItem setKeyboardType:UIKeyboardTypeNumbersAndPunctuation];
+            }
+            if (isURL){
+                [textEntryItem setKeyboardType:UIKeyboardTypeURL];
+            }
+            if (isNumeric){
+                [textEntryItem setKeyboardType:UIKeyboardTypeNumbersAndPunctuation];
+            }
+            if (isEmail){
+                [textEntryItem setKeyboardType:UIKeyboardTypeEmailAddress];
+            }
+            if (noAutoCorrect){
+                [textEntryItem setAutocorrectionType:UITextAutocorrectionTypeNo];
+            }
 			[textEntryItem setKeyboardDetails:obj];
             [currentGroupItems addObject:textEntryItem];
             
@@ -144,11 +206,13 @@ This is where it converts our plist entries into TSKSettingGroups/Items that can
             NSString *label = obj[@"label"];
 			NSString *description = obj[@"description"];
 			NSString *domain = obj[@"defaults"];
-            BOOL isDefault = [obj[@"default"] boolValue];
+            NSString *defaultValue = obj[@"default"];
 			NSArray *availableValues = obj[@"availableValues"];
 			id facade = [[NSClassFromString(@"TVSettingsPreferenceFacade") alloc] initWithDomain:domain notifyChanges:TRUE];
 			TSKSettingItem *multiItem = [TSKSettingItem multiValueItemWithTitle:label description:description representedObject:facade keyPath:key availableValues:availableValues];
-
+            if (defaultValue){
+                [multiItem setDefaultValue:defaultValue];
+            }
  		    [currentGroupItems addObject:multiItem];
 
         } else if ([cell isEqualToString:@"PSButtonCell"]) {
@@ -331,23 +395,31 @@ There is a likely a more elegant and proper way to do this, but it works for now
 	}
 }
 
--(id)previewForItemAtIndexPath:(NSIndexPath *)indexPath {
-
-	TSKPreviewViewController *previewItem = [super previewForItemAtIndexPath:indexPath];
-/*
-	TSKSettingGroup *currentGroup = self.settingGroups[indexPath.section];
-	TSKSettingItem *currentItem = currentGroup.settingItems[indexPath.row];
-	UIImage *icon = [currentItem itemIcon];
-	*/
-	UIImage *icon = [self ourIcon];
-	if (icon != nil) {
-		TSKVibrantImageView *imageView = [[TSKVibrantImageView alloc] initWithImage:icon];
-		[previewItem setContentView:imageView];
-	}
-	//NSLog(@"previewForItemAtIndexPath: %@", previewItem);
-	return previewItem;
-
++(TSKPreviewViewController*)defaultPreviewViewControllerWithIcon:(UIImage *)icon {
+    static TSKPreviewViewController *_defaultPreviewViewController=nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        _defaultPreviewViewController = [[TSKPreviewViewController alloc] init];
+        NSLog(@"_defaultPreviewViewController => %@", _defaultPreviewViewController);
+        if (icon != nil) {
+            TSKVibrantImageView *imageView = [[TSKVibrantImageView alloc] initWithImage:icon];
+            [_defaultPreviewViewController setContentView:imageView];
+        }
+    });
+    return _defaultPreviewViewController;
 }
+
+-(id)previewForItemAtIndexPath:(NSIndexPath*)indexPath {
+    
+    TSKSettingGroup *currentGroup = self.settingGroups[indexPath.section];
+    TSKSettingItem *currentItem = currentGroup.settingItems[indexPath.row];
+    NSString *desc = [currentItem localizedDescription];
+    UIImage *icon = [self ourIcon];
+    TSKPreviewViewController *item = [self.class defaultPreviewViewControllerWithIcon:icon];
+    [item setDescriptionText:desc];
+    return item;
+}
+
 
 
 @end
@@ -559,7 +631,6 @@ There is a likely a more elegant and proper way to do this, but it works for now
  }
 
 
-//FIXME: if the item doesn't specify an icon the one from above carries over to here..
 -(id)previewForItemAtIndexPath:(NSIndexPath *)indexPath {
 	TSKSettingGroup *currentGroup = self.settingGroups[indexPath.section];
 	TSKSettingItem *currentItem = currentGroup.settingItems[indexPath.row];
@@ -574,23 +645,15 @@ There is a likely a more elegant and proper way to do this, but it works for now
 			return vc;
 		}
 	}
-	//NSBundle *currentBundle = currentItem.bundleLoader.bundle;
-	//NSLog(@"currentBundle: %@", currentBundle);
-	//added a category to make item icons easier to get and set per item.
 	TSKPreviewViewController *previewItem = [super previewForItemAtIndexPath:indexPath];
 	TSKVibrantImageView *imageView = [previewItem contentView];
-	UIImage *icon = [currentItem itemIcon];
+	//added a category to make item icons easier to get and set per item.
+    UIImage *icon = [currentItem itemIcon];
 	if (icon != nil) {
-		//make a backup of the default image so any item that DOESNT have one can change back to this one. this is shitty-find a smarter way to do this.
-		if (self.defaultImage == nil) {
-			self.defaultImage = imageView.image;
-		}
 		[imageView setImage:icon];
-
-	} else {
-		if (self.defaultImage != nil){
-			[imageView setImage:self.defaultImage];
-		}
+	} else { //take the previous view controller on the navigation stack and use the default controller from that
+        previewItem = [[[self navigationController] previousViewController] defaultPreviewViewController];
+        [previewItem setDescriptionText:desc];
 	}
 	//NSLog(@"previewForItemAtIndexPath: %@", previewItem);
 	return previewItem;
