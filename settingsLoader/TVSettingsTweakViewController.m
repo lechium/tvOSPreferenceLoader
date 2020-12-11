@@ -15,7 +15,7 @@ preferenceBundleGroups is called by loadSettingGroups which is the initial entry
 
 */
 
-
+#import "Log.h"
 #import "TVSettingsTweakViewController.h"
 #import "TSKTextInputViewController.h"
 #import "NSTask.h"
@@ -662,7 +662,7 @@ There is a likely a more elegant and proper way to do this, but it works for now
 		}
 	}
 	TSKPreviewViewController *previewItem = [self previewViewController];
-	TSKPreviewViewController *superPpreviewItem = [super previewForItemAtIndexPath:indexPath];
+	TSKPreviewViewController *superPreviewItem = [super previewForItemAtIndexPath:indexPath];
 	TSKVibrantImageView *imageView = [previewItem contentView];
 	if (imageView == nil) {
 		imageView = [superPreviewItem contentView];

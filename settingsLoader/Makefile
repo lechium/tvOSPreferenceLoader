@@ -4,7 +4,7 @@ export GO_EASY_ON_ME=1
 export SDKVERSION=12.4
 include $(THEOS)/makefiles/common.mk
 TWEAK_NAME = settingsLoader
-settingsLoader_FILES = Tweak.xm TVSettingsTweakViewController.m
+settingsLoader_FILES = Tweak.xm TVSettingsTweakViewController.m Log.m
 settingsLoader_LIBRARIES = substrate
 settingsLoader_FRAMEWORKS = Foundation UIKit MAObjCRuntime
 settingsLoader_PRIVATEFRAMEWORKS = TVSettingKit
