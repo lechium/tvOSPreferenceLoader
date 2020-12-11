@@ -565,10 +565,12 @@ There is a likely a more elegant and proper way to do this, but it works for now
 	TSKSettingItem *currentItem = currentGroup.settingItems[indexPath.row];
 	NSBundle *bundle = currentItem.bundleLoader.bundle;
 	NSString *className = bundle.infoDictionary[@"NSPrincipalClass"];
+    NSString *desc = [currentItem localizedDescription];
 	if (className) {
 		Class principalClass = NSClassFromString(className);
 		if (principalClass && [principalClass respondsToSelector:@selector(defaultPreviewViewController)]) {
-			id vc = [principalClass defaultPreviewViewController];
+			id vc = (TSKPreviewViewController*)[principalClass defaultPreviewViewController];
+            [vc setDescriptionText:desc];
 			return vc;
 		}
 	}
