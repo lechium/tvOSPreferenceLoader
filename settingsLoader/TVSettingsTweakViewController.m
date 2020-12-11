@@ -20,6 +20,7 @@ preferenceBundleGroups is called by loadSettingGroups which is the initial entry
 #import "TSKTextInputViewController.h"
 #import "NSTask.h"
 #import <UIKit/UITextInputTraits.h>
+#import <MAObjCRuntime/MAObjCRuntime.h>
 
 @interface UINavigationController (convenience)
 
@@ -503,10 +504,12 @@ There is a likely a more elegant and proper way to do this, but it works for now
 
 				TSKSettingItem *settingsItem = [TSKSettingItem childPaneItemWithTitle:label description:description representedObject:nil keyPath:nil childControllerBlock:^(id object) {
         
-					//NSLog(@"self: %@ object: %@", self, object);
-				
-
-					PLCustomListViewController *controller = [PLCustomListViewController new];
+					NSLog(@"[preferenceloader] self: %@ object: %@", self, object);
+                    Class NSFoo = NSClassFromString(@"PLCustomListViewController");
+                    NSString *spacelessLabel = [label stringByReplacingOccurrencesOfString:@" " withString:@""];
+                    Class myFoo = [NSFoo rt_createSubclassNamed: [spacelessLabel stringByAppendingString:@"ListViewController"]];
+                    
+					PLCustomListViewController *controller = [myFoo new];
 					if (image){
 						[controller setOurIcon:image];
 					}
