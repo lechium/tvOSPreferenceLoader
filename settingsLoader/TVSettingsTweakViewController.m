@@ -561,13 +561,21 @@ There is a likely a more elegant and proper way to do this, but it works for now
 
 //FIXME: if the item doesn't specify an icon the one from above carries over to here..
 -(id)previewForItemAtIndexPath:(NSIndexPath *)indexPath {
-
-	TSKPreviewViewController *previewItem = [super previewForItemAtIndexPath:indexPath];
 	TSKSettingGroup *currentGroup = self.settingGroups[indexPath.section];
 	TSKSettingItem *currentItem = currentGroup.settingItems[indexPath.row];
+	NSBundle *bundle = currentItem.bundleLoader.bundle;
+	NSString *className = bundle.infoDictionary[@"NSPrincipalClass"];
+	if (className) {
+		Class principalClass = NSClassFromString(className);
+		if (principalClass && [principalClass respondsToSelector:@selector(defaultPreviewViewController)]) {
+			id vc = [principalClass defaultPreviewViewController];
+			return vc;
+		}
+	}
 	//NSBundle *currentBundle = currentItem.bundleLoader.bundle;
 	//NSLog(@"currentBundle: %@", currentBundle);
 	//added a category to make item icons easier to get and set per item.
+	TSKPreviewViewController *previewItem = [super previewForItemAtIndexPath:indexPath];
 	TSKVibrantImageView *imageView = [previewItem contentView];
 	UIImage *icon = [currentItem itemIcon];
 	if (icon != nil) {
