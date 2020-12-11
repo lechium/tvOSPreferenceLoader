@@ -396,27 +396,27 @@ There is a likely a more elegant and proper way to do this, but it works for now
 	}
 }
 
-+(TSKPreviewViewController*)defaultPreviewViewControllerWithIcon:(UIImage *)icon {
-    static TSKPreviewViewController *_defaultPreviewViewController=nil;
-    static dispatch_once_t onceToken;
-    dispatch_once(&onceToken, ^{
-        _defaultPreviewViewController = [[TSKPreviewViewController alloc] init];
-        NSLog(@"_defaultPreviewViewController => %@", _defaultPreviewViewController);
-        if (icon != nil) {
-            TSKVibrantImageView *imageView = [[TSKVibrantImageView alloc] initWithImage:icon];
-            [_defaultPreviewViewController setContentView:imageView];
+-(TSKPreviewViewController*)previewViewController {
+    @synchronized (self) {
+        if ([super previewViewController] == nil) {
+            NSLog(@"[preferenceloader] %@: generating a previewViewController :(", self);
+            [self setPreviewViewController:[[TSKPreviewViewController alloc] init]];
         }
-    });
-    return _defaultPreviewViewController;
+    }
+    return [super previewViewController];
 }
 
 -(id)previewForItemAtIndexPath:(NSIndexPath*)indexPath {
-    
     TSKSettingGroup *currentGroup = self.settingGroups[indexPath.section];
     TSKSettingItem *currentItem = currentGroup.settingItems[indexPath.row];
     NSString *desc = [currentItem localizedDescription];
     UIImage *icon = [self ourIcon];
-    TSKPreviewViewController *item = [self.class defaultPreviewViewControllerWithIcon:icon];
+    TSKPreviewViewController *item = [self previewViewController];
+    NSLog(@"[preferenceloader] previewForItemAtIndexPath: %@", item);
+    if (icon != nil) {
+        TSKVibrantImageView *imageView = [[TSKVibrantImageView alloc] initWithImage:icon];
+        [item setContentView:imageView];
+    }
     [item setDescriptionText:desc];
     return item;
 }
@@ -438,6 +438,15 @@ There is a likely a more elegant and proper way to do this, but it works for now
 
 
 @implementation TVSettingsTweakViewController
+
+-(TSKPreviewViewController*)previewViewController {
+    TSKPreviewViewController *vc = [super previewViewController];
+    if (vc == nil) {
+        vc = [[TSKPreviewViewController alloc] init];
+        [super setPreviewViewController:vc];
+    }
+    return vc;
+}
 
 //initial entry point for any type of TSKViewController (which we inherit from)
 
@@ -503,18 +512,22 @@ There is a likely a more elegant and proper way to do this, but it works for now
 				//we need to configure this settings item later, so we use the childBlocks based init
 
 				TSKSettingItem *settingsItem = [TSKSettingItem childPaneItemWithTitle:label description:description representedObject:nil keyPath:nil childControllerBlock:^(id object) {
-        
-					NSLog(@"[preferenceloader] self: %@ object: %@", self, object);
-                    Class NSFoo = NSClassFromString(@"PLCustomListViewController");
-                    NSString *spacelessLabel = [label stringByReplacingOccurrencesOfString:@" " withString:@""];
-                    Class myFoo = [NSFoo rt_createSubclassNamed: [spacelessLabel stringByAppendingString:@"ListViewController"]];
-                    
-					PLCustomListViewController *controller = [myFoo new];
-					if (image){
-						[controller setOurIcon:image];
-					}
-					[controller setTitle:label];
-					[controller setMenuItems:items]; //these are just dictionary menu items loaded from our plist, will be converted later
+					static PLCustomListViewController* controller;
+					static dispatch_once_t onceToken;
+					dispatch_once(&onceToken, ^{
+						NSLog(@"[preferenceloader] self: %@ object: %@", self, object);
+						Class NSFoo = NSClassFromString(@"PLCustomListViewController");
+						NSString *spacelessLabel = [label stringByReplacingOccurrencesOfString:@" " withString:@""];
+						Class myFoo = [NSFoo rt_createSubclassNamed: [spacelessLabel stringByAppendingString:@"ListViewController"]];
+
+						controller = [myFoo new];
+						if (image){
+							[controller setOurIcon:image];
+							[controller setPreviewViewController:[self previewViewController]];
+						}
+						[controller setTitle:label];
+						[controller setMenuItems:items]; //these are just dictionary menu items loaded from our plist, will be converted later
+					});
 					return controller;
    				}];
 				[settingsItem setItemIcon:image];
@@ -639,24 +652,30 @@ There is a likely a more elegant and proper way to do this, but it works for now
 	TSKSettingItem *currentItem = currentGroup.settingItems[indexPath.row];
 	NSBundle *bundle = currentItem.bundleLoader.bundle;
 	NSString *className = bundle.infoDictionary[@"NSPrincipalClass"];
-    NSString *desc = [currentItem localizedDescription];
+	NSString *desc = [currentItem localizedDescription];
 	if (className) {
 		Class principalClass = NSClassFromString(className);
 		if (principalClass && [principalClass respondsToSelector:@selector(defaultPreviewViewController)]) {
 			id vc = (TSKPreviewViewController*)[principalClass defaultPreviewViewController];
-            [vc setDescriptionText:desc];
+			[vc setDescriptionText:desc];
 			return vc;
 		}
 	}
-	TSKPreviewViewController *previewItem = [super previewForItemAtIndexPath:indexPath];
+	TSKPreviewViewController *previewItem = [self previewViewController];
+	TSKPreviewViewController *superPpreviewItem = [super previewForItemAtIndexPath:indexPath];
 	TSKVibrantImageView *imageView = [previewItem contentView];
+	if (imageView == nil) {
+		imageView = [superPreviewItem contentView];
+		[previewItem setContentView:imageView];
+	}
+	previewItem.descriptionText = superPreviewItem.descriptionText;
 	//added a category to make item icons easier to get and set per item.
-    UIImage *icon = [currentItem itemIcon];
+	UIImage *icon = [currentItem itemIcon];
 	if (icon != nil) {
 		[imageView setImage:icon];
 	} else { //take the previous view controller on the navigation stack and use the default controller from that
-        previewItem = [[[self navigationController] previousViewController] defaultPreviewViewController];
-        [previewItem setDescriptionText:desc];
+		previewItem = [[[self navigationController] previousViewController] defaultPreviewViewController];
+		[previewItem setDescriptionText:desc];
 	}
 	//NSLog(@"previewForItemAtIndexPath: %@", previewItem);
 	return previewItem;
