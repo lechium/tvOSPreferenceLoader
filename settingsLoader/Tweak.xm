@@ -6,7 +6,6 @@
 #import <UIKit/UIKit.h>
 #import "TVSettingsTweakViewController.h"
 #import <objc/runtime.h>
-#import "Log.h"
 // static NSInteger PSSpecifierSort(PSSpecifier *a1, PSSpecifier *a2, void *context) {
 // 	NSString *string1 = [a1 name];
 // 	NSString *string2 = [a2 name];
@@ -60,7 +59,7 @@
 	we could override the property variable for - (NSArray *)settingsGroups instead of -(id)loadSettignsGroup, but this works so meh!
 */
 - (id)loadSettingGroups {
-	
+	NSLog(@"[Tweak.xm] loadSettingsGroup");
 	%log;
 	if (![self loadTweakMenu]){
 		NSLog(@"no tweaks to load, dont even load the menu!");
