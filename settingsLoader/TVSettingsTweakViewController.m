@@ -22,6 +22,49 @@ preferenceBundleGroups is called by loadSettingGroups which is the initial entry
 #import <UIKit/UITextInputTraits.h>
 #import <MAObjCRuntime/MAObjCRuntime.h>
 
+@interface PLCustomListViewController: TSKViewController
+
+@property (nonatomic, strong) NSDictionary *rootPlist;
+@property (nonatomic, strong) NSString *ourDomain;
+@property (nonatomic, strong) NSArray *menuItems;
+@property (nonatomic, strong) UIImage *ourIcon;
+
+- (void)showTextFieldControllerForItem:(TSKSettingItem *)item;
+- (void)relaunchBackboardd;
+- (void)showMissingActionAlert;
+@end
+
+@interface TSKSettingItem (preferenceLoader)
+@property (nonatomic, strong) TSKPreviewViewController *previewViewController;
+@property (nonatomic, strong) id controller;
+@end
+
+@implementation TSKSettingItem (preferenceLoader)
+-(PLCustomListViewController *)controller
+{
+    PLCustomListViewController *controller = objc_getAssociatedObject(self, @selector(controller));
+    NSLog(@"[preferenceloader] %@ controller: %@", self, controller);
+    return controller;
+}
+
+- (void)setController:(PLCustomListViewController*)controller {
+    NSLog(@"[preferenceloader] %@ setPreviewViewController: %@", self, controller);
+    objc_setAssociatedObject(self, @selector(controller), controller, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
+
+- (TSKPreviewViewController *)previewViewController
+{
+    TSKPreviewViewController *previewViewController = objc_getAssociatedObject(self, @selector(previewViewController));
+    NSLog(@"[preferenceloader] %@ previewViewController: %@", self, previewViewController);
+    return previewViewController;
+}
+
+- (void)setPreviewViewController:(TSKPreviewViewController *)previewViewController {
+    NSLog(@"[preferenceloader] %@ setPreviewViewController: %@", self, previewViewController);
+    objc_setAssociatedObject(self, @selector(previewViewController), previewViewController, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
+@end
+
 @interface UINavigationController (convenience)
 
 - (UIViewController *)previousViewController;
@@ -287,18 +330,6 @@ There is a likely a more elegant and proper way to do this, but it works for now
 
 @end
 
-@interface PLCustomListViewController: TSKViewController
-
-@property (nonatomic, strong) NSDictionary *rootPlist;
-@property (nonatomic, strong) NSString *ourDomain;
-@property (nonatomic, strong) NSArray *menuItems;
-@property (nonatomic, strong) UIImage *ourIcon;
-
-- (void)showTextFieldControllerForItem:(TSKSettingItem *)item;
-- (void)relaunchBackboardd;
-- (void)showMissingActionAlert;
-@end
-
 @implementation PLCustomListViewController
 
 - (void)showMissingActionAlert {
@@ -412,7 +443,7 @@ There is a likely a more elegant and proper way to do this, but it works for now
     NSString *desc = [currentItem localizedDescription];
     UIImage *icon = [self ourIcon];
     TSKPreviewViewController *item = [self previewViewController];
-    NSLog(@"[preferenceloader] previewForItemAtIndexPath: %@", item);
+    NSLog(@"[preferenceloader] %@ previewForItemAtIndexPath: %@", self, item);
     if (icon != nil) {
         TSKVibrantImageView *imageView = [[TSKVibrantImageView alloc] initWithImage:icon];
         [item setContentView:imageView];
@@ -506,30 +537,32 @@ There is a likely a more elegant and proper way to do this, but it works for now
 				//NSLog(@"icon: %@", iconPath);
 				NSString *fullIconPath = [preferencesPath stringByAppendingPathComponent:iconPath];
 				UIImage *image = [UIImage imageWithContentsOfFile:fullIconPath];
-				//NSLog(@"fullIconPath: %@", fullIconPath);
-				//NSLog(@"image: %@", image);
+				//NSLog(@"[preferenceloader] fullIconPath: %@", fullIconPath);
+				//NSLog(@"[preferenceloader] image: %@", image);
 				
 				//we need to configure this settings item later, so we use the childBlocks based init
 
-				TSKSettingItem *settingsItem = [TSKSettingItem childPaneItemWithTitle:label description:description representedObject:nil keyPath:nil childControllerBlock:^(id object) {
-					static PLCustomListViewController* controller;
-					static dispatch_once_t onceToken;
-					dispatch_once(&onceToken, ^{
-						NSLog(@"[preferenceloader] self: %@ object: %@", self, object);
-						Class NSFoo = NSClassFromString(@"PLCustomListViewController");
-						NSString *spacelessLabel = [label stringByReplacingOccurrencesOfString:@" " withString:@""];
-						Class myFoo = [NSFoo rt_createSubclassNamed: [spacelessLabel stringByAppendingString:@"ListViewController"]];
+				TSKSettingItem *settingsItem = [TSKSettingItem childPaneItemWithTitle:label description:description representedObject:nil keyPath:nil childControllerBlock:^(TSKSettingItem *object) {
+					PLCustomListViewController* controller = [object controller];
+                                        if (controller)
+                                            return controller;
 
-						controller = [myFoo new];
-						if (image){
-							[controller setOurIcon:image];
-							[controller setPreviewViewController:[self previewViewController]];
-						}
-						[controller setTitle:label];
-						[controller setMenuItems:items]; //these are just dictionary menu items loaded from our plist, will be converted later
-					});
+                                        NSLog(@"[preferenceloader] self: %@ object: %@", self, object);
+                                        Class NSFoo = NSClassFromString(@"PLCustomListViewController");
+                                        NSString *spacelessLabel = [label stringByReplacingOccurrencesOfString:@" " withString:@""];
+                                        Class myFoo = [NSFoo rt_createSubclassNamed: [spacelessLabel stringByAppendingString:@"ListViewController"]];
+
+                                        controller = [myFoo new];
+                                        if (image){
+                                            [controller setOurIcon:image];
+                                            [controller setPreviewViewController:[object previewViewController]];
+                                        }
+                                        [controller setTitle:label];
+                                        [controller setMenuItems:items]; //these are just dictionary menu items loaded from our plist, will be converted later
+                                        [object setController:controller];
 					return controller;
    				}];
+                                [settingsItem setPreviewViewController:[[TSKPreviewViewController alloc] init]];
 				[settingsItem setItemIcon:image];
 				[allTheSpecs addObject:settingsItem];
 				//NSLog(@"made item: %@", settingsItem);
@@ -602,42 +635,58 @@ There is a likely a more elegant and proper way to do this, but it works for now
 
     NSMutableArray *items = [NSMutableArray  new];
 
-	if(isBundle) {
-        
-        NSLog(@"we got a bundle!");
+    if(isBundle) {
 
-		if([[entry objectForKey:@"isController"] boolValue]) {
-			
-            	NSLog(@"creating TSKSettingItems!");
+	    NSLog(@"we got a bundle!");
 
-  	            NSString *principalClassKey = entry[@"detail"];
-	            NSString *iconKey = entry[@"icon"]; 
-                NSString *labelKey = entry[@"label"];
-	            NSString *descriptionKey = entry[@"description"]; //not part of original spec, custom addition.
-				//load the bundle so we can get access to the class
-                [prefBundle load];
+	    if([[entry objectForKey:@"isController"] boolValue]) {
 
-			    //all items are going to be child panel items for now which allow use to load another class that gives us our groups from said tweak
-                TSKSettingItem *item = [TSKSettingItem childPaneItemWithTitle:labelKey description:descriptionKey representedObject:nil keyPath:nil childControllerClass:NSClassFromString(principalClassKey)];
-                
-				//this does the magic of loading the class from the bundle
-				TSKBundleLoader *bundleLoader = [[TSKBundleLoader alloc] initWithBundle:prefBundle];
-                [item setBundleLoader:bundleLoader];
-				
-				//NSLog(@"iconKey: %@", iconKey);
+		    NSLog(@"creating TSKSettingItems!");
 
-				NSString *iconPath = [bundlePath stringByAppendingPathComponent:iconKey];
-				//NSString *iconPath =[[NSBundle mainBundle] pathForResource:[iconKey stringByDeletingPathExtension] ofType:[iconKey pathExtension]];
-                
-				//NSLog(@"iconPath: %@", iconPath);
-				UIImage *image = [UIImage imageWithContentsOfFile:iconPath];
-				//NSLog(@"image: %@", image);
-				[item setItemIcon:image];
-			//	NSLog(@"item: %@", item);
-                [items addObject:item];
+		    NSString *principalClassKey = entry[@"detail"];
+		    NSString *iconKey = entry[@"icon"]; 
+		    NSString *labelKey = entry[@"label"];
+		    NSString *descriptionKey = entry[@"description"]; //not part of original spec, custom addition.
+		    //load the bundle so we can get access to the class
+		    [prefBundle load];
 
-		
-		}
+		    //all items are going to be child panel items for now which allow use to load another class that gives us our groups from said tweak
+		    TSKSettingItem *item = [TSKSettingItem childPaneItemWithTitle:labelKey description:descriptionKey representedObject:nil keyPath:nil childControllerClass:NSClassFromString(principalClassKey)];
+
+		    //this does the magic of loading the class from the bundle
+		    TSKBundleLoader *bundleLoader = [[TSKBundleLoader alloc] initWithBundle:prefBundle];
+		    [item setBundleLoader:bundleLoader];
+
+		    //NSLog(@"iconKey: %@", iconKey);
+
+		    NSString *iconPath = [bundlePath stringByAppendingPathComponent:iconKey];
+		    //NSString *iconPath =[[NSBundle mainBundle] pathForResource:[iconKey stringByDeletingPathExtension] ofType:[iconKey pathExtension]];
+
+		    //NSLog(@"[preferenceloader] iconPath: %@", iconPath);
+		    UIImage *image = [UIImage imageWithContentsOfFile:iconPath];
+		    //NSLog(@"[preferenceloader] image: %@", image);
+		    [item setItemIcon:image];
+		    //NSLog(@"[preferenceloader] item: %@ icon: %@", item, [item itemIcon]);
+		    NSBundle *bundle = bundleLoader.bundle;
+		    NSString *className = bundle.infoDictionary[@"NSPrincipalClass"];
+		    TSKPreviewViewController *previewVC = nil;
+		    if (className) {
+			    Class principalClass = NSClassFromString(className);
+			    if (principalClass && [principalClass respondsToSelector:@selector(defaultPreviewViewController)]) {
+				    previewVC = (TSKPreviewViewController*)[principalClass defaultPreviewViewController];
+			    }
+		    }
+		    if (previewVC == nil) {
+			previewVC = [[TSKPreviewViewController alloc] init];
+		    }
+		    if (image != nil && [item previewViewController] == nil) {
+			    TSKVibrantImageView *imageView = [[TSKVibrantImageView alloc] initWithImage:image];
+			    [previewVC setContentView:imageView];
+		    }
+		    [previewVC setDescriptionText:[item localizedDescription]];
+		    [item setPreviewViewController:previewVC];
+		    [items addObject:item];
+	    }
 	} else {
 	
         NSLog(@"not a bundle! this feature is currently unsupported entry: %@ path: %@", entry, prefBundle);
@@ -650,36 +699,30 @@ There is a likely a more elegant and proper way to do this, but it works for now
 -(id)previewForItemAtIndexPath:(NSIndexPath *)indexPath {
 	TSKSettingGroup *currentGroup = self.settingGroups[indexPath.section];
 	TSKSettingItem *currentItem = currentGroup.settingItems[indexPath.row];
-	NSBundle *bundle = currentItem.bundleLoader.bundle;
-	NSString *className = bundle.infoDictionary[@"NSPrincipalClass"];
 	NSString *desc = [currentItem localizedDescription];
-	if (className) {
-		Class principalClass = NSClassFromString(className);
-		if (principalClass && [principalClass respondsToSelector:@selector(defaultPreviewViewController)]) {
-			id vc = (TSKPreviewViewController*)[principalClass defaultPreviewViewController];
-			[vc setDescriptionText:desc];
-			return vc;
+	UIImage *icon = [currentItem itemIcon];
+	//added a category to make item icons easier to get and set per item.
+	TSKPreviewViewController *previewItem = [currentItem previewViewController];
+	if (!previewItem) {
+		if (icon == nil) {
+			//take the previous view controller on the navigation stack and use the default controller from that
+			previewItem = [[[self navigationController] previousViewController] defaultPreviewViewController];
+		} else {
+			previewItem = [[TSKPreviewViewController alloc] init];
 		}
+		[currentItem setPreviewViewController:previewItem];
 	}
-	TSKPreviewViewController *previewItem = [self previewViewController];
-	TSKPreviewViewController *superPreviewItem = [super previewForItemAtIndexPath:indexPath];
+	[previewItem setDescriptionText:desc];
 	TSKVibrantImageView *imageView = [previewItem contentView];
 	if (imageView == nil) {
-		imageView = [superPreviewItem contentView];
+		imageView = [[TSKVibrantImageView alloc] initWithImage:icon];
 		[previewItem setContentView:imageView];
 	}
-	previewItem.descriptionText = superPreviewItem.descriptionText;
-	//added a category to make item icons easier to get and set per item.
-	UIImage *icon = [currentItem itemIcon];
-	if (icon != nil) {
+	if ([imageView image] != icon) {
 		[imageView setImage:icon];
-	} else { //take the previous view controller on the navigation stack and use the default controller from that
-		previewItem = [[[self navigationController] previousViewController] defaultPreviewViewController];
-		[previewItem setDescriptionText:desc];
 	}
 	//NSLog(@"previewForItemAtIndexPath: %@", previewItem);
 	return previewItem;
-
 }
 
 
