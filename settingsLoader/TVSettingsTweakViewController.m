@@ -100,6 +100,11 @@ static NSString *const PLAlternatePlistNameKey = @"pl_alt_plist_name";
 
 @implementation TSKSettingGroup (libprefs)
 + (BOOL)environmentPassesPreferenceLoaderFilter:(NSDictionary *)filter {
+    #ifdef DEBUG
+    NSLog(@"we are debug!");
+    #else
+    NSLog(@"NO DEBUG!");
+    #endif
     NSLog(@"[tvPreferenceLoader] Checking filter %@", filter);
 
     if(!filter) return YES;

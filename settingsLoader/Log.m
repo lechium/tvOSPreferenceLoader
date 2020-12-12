@@ -6,7 +6,7 @@ void append(NSString *msg){
     // get path to Documents/somefile.txt
     //NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
     NSString *documentsDirectory = @"/var/mobile/Documents";//[paths objectAtIndex:0];
-    NSString *path = [documentsDirectory stringByAppendingPathComponent:@"logfile.txt"];
+    NSString *path = [documentsDirectory stringByAppendingPathComponent:@"TVSettings.log"];
     // create if needed
     if (![[NSFileManager defaultManager] fileExistsAtPath:path]){
         fprintf(stderr,"Creating file at %s",[path UTF8String]);
