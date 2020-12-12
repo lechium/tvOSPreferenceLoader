@@ -667,8 +667,7 @@ There is a likely a more elegant and proper way to do this, but it works for now
 		    //NSLog(@"[preferenceloader] image: %@", image);
 		    [item setItemIcon:image];
 		    //NSLog(@"[preferenceloader] item: %@ icon: %@", item, [item itemIcon]);
-		    NSBundle *bundle = bundleLoader.bundle;
-		    NSString *className = bundle.infoDictionary[@"NSPrincipalClass"];
+		    NSString *className = prefBundle.infoDictionary[@"NSPrincipalClass"];
 		    TSKPreviewViewController *previewVC = nil;
 		    if (className) {
 			    Class principalClass = NSClassFromString(className);
