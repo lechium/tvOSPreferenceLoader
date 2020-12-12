@@ -22,9 +22,7 @@ preferenceBundleGroups is called by loadSettingGroups which is the initial entry
 #import "NSTask.h"
 #import <UIKit/UITextInputTraits.h>
 #import "TVSPreferences.h"
-#ifdef DEBUG
 #import "Log.h"
-#endif
 
 @interface PLCustomListViewController: TSKViewController
 
