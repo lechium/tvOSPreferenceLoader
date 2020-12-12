@@ -8,6 +8,7 @@
 
 
 #import <UIKit/UIKit.h>
+/*
 #import "TSKSettingItem.h"
 #import "TSKSettingGroup.h"
 #import "TSKVibrantImageView.h"
@@ -15,10 +16,12 @@
 #import "TSKBundleLoader.h"
 #import "TSKTableViewController.h"
 #import "TSKViewController.h"
+ */
+#import <TVSettingKit/TVSettingKit.h>
 #import <objc/runtime.h>
 #import "TVSettingsPreferenceFacade.h"
 #import "TVSettingsItemFactory.h"
-#import "TSKTextInputSettingItem.h"
+//#import "TSKTextInputSettingItem.h"
 
 
 @interface TSKSettingGroup (lazyItems)
