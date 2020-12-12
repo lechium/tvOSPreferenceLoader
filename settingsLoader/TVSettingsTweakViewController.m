@@ -98,7 +98,7 @@ static NSString *const PLAlternatePlistNameKey = @"pl_alt_plist_name";
 
 @implementation TSKSettingGroup (libprefs)
 + (BOOL)environmentPassesPreferenceLoaderFilter:(NSDictionary *)filter {
-    NSLog(@"[tvPreferenceLoader] Checking filter %@", filter);
+    NSLog(@"Checking filter %@", filter);
 
     if(!filter) return YES;
     bool valid = YES;
@@ -107,13 +107,13 @@ static NSString *const PLAlternatePlistNameKey = @"pl_alt_plist_name";
     if(coreFoundationVersion && coreFoundationVersion.count > 0) {
         NSNumber *lowerBound = [coreFoundationVersion objectAtIndex:0];
         NSNumber *upperBound = coreFoundationVersion.count > 1 ? [coreFoundationVersion objectAtIndex:1] : nil;
-        NSLog(@"[tvPreferenceLoader]%@ <= CF Version (%f) < %@", lowerBound, kCFCoreFoundationVersionNumber, upperBound);
+        NSLog(@"%@ <= CF Version (%f) < %@", lowerBound, kCFCoreFoundationVersionNumber, upperBound);
         valid = valid && (kCFCoreFoundationVersionNumber >= lowerBound.floatValue);
 
         if(upperBound)
             valid = valid && (kCFCoreFoundationVersionNumber < upperBound.floatValue);
     }
-    NSLog(valid ? @"[tvPreferenceLoader] Filter matched" : @"[tvPreferenceLoader] Filter did not match");
+    NSLog(valid ? @"Filter matched" : @"Filter did not match");
     return valid;
 }
 
