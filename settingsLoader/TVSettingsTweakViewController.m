@@ -15,10 +15,7 @@ preferenceBundleGroups is called by loadSettingGroups which is the initial entry
 
 */
 
-#import "Log.h"
-
 #import "TVSettingsTweakViewController.h"
-//#import "TSKTextInputViewController.h"
 #import "NSTask.h"
 #import <UIKit/UITextInputTraits.h>
 #import "TVSPreferences.h"
