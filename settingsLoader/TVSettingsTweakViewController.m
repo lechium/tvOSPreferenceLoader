@@ -22,7 +22,50 @@ preferenceBundleGroups is called by loadSettingGroups which is the initial entry
 #import "NSTask.h"
 #import <UIKit/UITextInputTraits.h>
 #import "TVSPreferences.h"
-//#import <MAObjCRuntime/MAObjCRuntime.h>
+#import "Log.h"
+
+@interface PLCustomListViewController: TSKViewController
+
+@property (nonatomic, strong) NSDictionary *rootPlist;
+@property (nonatomic, strong) NSString *ourDomain;
+@property (nonatomic, strong) NSArray *menuItems;
+@property (nonatomic, strong) UIImage *ourIcon;
+
+- (void)showTextFieldControllerForItem:(TSKSettingItem *)item;
+- (void)relaunchBackboardd;
+- (void)showMissingActionAlert;
+@end
+
+@interface TSKSettingItem (preferenceLoader)
+@property (nonatomic, strong) TSKPreviewViewController *previewViewController;
+@property (nonatomic, strong) id controller;
+@end
+
+@implementation TSKSettingItem (preferenceLoader)
+-(PLCustomListViewController *)controller
+{
+    PLCustomListViewController *controller = objc_getAssociatedObject(self, @selector(controller));
+    NSLog(@"[preferenceloader] %@ controller: %@", self, controller);
+    return controller;
+}
+
+- (void)setController:(PLCustomListViewController*)controller {
+    NSLog(@"[preferenceloader] %@ setPreviewViewController: %@", self, controller);
+    objc_setAssociatedObject(self, @selector(controller), controller, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
+
+- (TSKPreviewViewController *)previewViewController
+{
+    TSKPreviewViewController *previewViewController = objc_getAssociatedObject(self, @selector(previewViewController));
+    NSLog(@"[preferenceloader] %@ previewViewController: %@", self, previewViewController);
+    return previewViewController;
+}
+
+- (void)setPreviewViewController:(TSKPreviewViewController *)previewViewController {
+    NSLog(@"[preferenceloader] %@ setPreviewViewController: %@", self, previewViewController);
+    objc_setAssociatedObject(self, @selector(previewViewController), previewViewController, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
+@end
 
 @interface UINavigationController (convenience)
 
@@ -406,54 +449,44 @@ There is a likely a more elegant and proper way to do this, but it works for now
 	NSString *preferencesPath = @"/Library/PreferenceLoader/Preferences";
 
 	NSArray *subpaths = [[NSFileManager defaultManager] subpathsOfDirectoryAtPath:preferencesPath error:NULL];
-		for(NSString *item in subpaths) {
-			if(![[item pathExtension] isEqualToString:@"plist"]) continue;
-			NSLog(@"[preferenceloader] processing %@", item);
-			NSString *fullPath = [NSString stringWithFormat:@"/Library/PreferenceLoader/Preferences/%@", item];
-			NSDictionary *plPlist = [NSDictionary dictionaryWithContentsOfFile:fullPath];
-			if(![TSKSettingGroup environmentPassesPreferenceLoaderFilter:[plPlist objectForKey:@"filter"] ?: [plPlist objectForKey:PLFilterKey]]) continue;
+	for(NSString *item in subpaths) {
+		if(![[item pathExtension] isEqualToString:@"plist"]) continue;
+		NSLog(@"processing %@", item);
+		NSString *fullPath = [NSString stringWithFormat:@"/Library/PreferenceLoader/Preferences/%@", item];
+		NSDictionary *plPlist = [NSDictionary dictionaryWithContentsOfFile:fullPath];
+		if(![TSKSettingGroup environmentPassesPreferenceLoaderFilter:[plPlist objectForKey:@"filter"] ?: [plPlist objectForKey:PLFilterKey]]) continue;
 
-			NSDictionary *entry = [plPlist objectForKey:@"entry"];
-			if(!entry) continue;
-			NSLog(@"[preferenceloader] found an entry key for %@!", item);
+		NSDictionary *entry = [plPlist objectForKey:@"entry"];
+		if(!entry) continue;
+		NSLog(@"found an entry key for %@!", item);
 
-			if(![TSKSettingGroup environmentPassesPreferenceLoaderFilter:[entry objectForKey:PLFilterKey]]) continue;
+		if(![TSKSettingGroup environmentPassesPreferenceLoaderFilter:[entry objectForKey:PLFilterKey]]) continue;
 
-			NSArray *specs = [self specifiersFromEntry:entry sourcePreferenceLoaderBundlePath:[fullPath stringByDeletingLastPathComponent] title:[[item lastPathComponent] stringByDeletingPathExtension]];
-			if(specs.count > 0) {
+		NSArray *specs = [self specifiersFromEntry:entry sourcePreferenceLoaderBundlePath:[fullPath stringByDeletingLastPathComponent] title:[[item lastPathComponent] stringByDeletingPathExtension]];
+		if(specs.count > 0) {
 
-				NSLog(@"[preferenceloader] appending to the array!");
+			NSLog(@"appending to the array!");
 
-            	[allTheSpecs addObjectsFromArray:specs];
-			} else { //there isnt a bundle
-				NSString *label = entry[@"label"];
-				NSArray *items = plPlist[@"items"];
-				NSString *iconPath = entry[@"icon"];
-				NSString *description = entry[@"description"];
-				//NSLog(@"items: %@", items);
+			[allTheSpecs addObjectsFromArray:specs];
+		} else { //there isnt a bundle
+			NSString *label = entry[@"label"];
+			NSArray *items = plPlist[@"items"];
+			NSString *iconPath = entry[@"icon"];
+			NSString *description = entry[@"description"];
+			//NSLog(@"items: %@", items);
 
-				//NSLog(@"creating menu items!!");
-				//NSLog(@"icon: %@", iconPath);
-				NSString *fullIconPath = [preferencesPath stringByAppendingPathComponent:iconPath];
-				UIImage *image = [UIImage imageWithContentsOfFile:fullIconPath];
-				//NSLog(@"fullIconPath: %@", fullIconPath);
-				//NSLog(@"image: %@", image);
-				
-				//we need to configure this settings item later, so we use the childBlocks based init
+			//NSLog(@"creating menu items!!");
+			//NSLog(@"icon: %@", iconPath);
+			NSString *fullIconPath = [preferencesPath stringByAppendingPathComponent:iconPath];
+			UIImage *image = [UIImage imageWithContentsOfFile:fullIconPath];
+			//NSLog(@"[preferenceloader] fullIconPath: %@", fullIconPath);
+			//NSLog(@"[preferenceloader] image: %@", image);
 
-				TSKSettingItem *settingsItem = [TSKSettingItem childPaneItemWithTitle:label description:description representedObject:nil keyPath:nil childControllerBlock:^(id object) {
-        
-					NSLog(@"[preferenceloader] self: %@ object: %@", self, object);
-                    //Class NSFoo = NSClassFromString(@"PLCustomListViewController");
-                    //NSString *spacelessLabel = [label stringByReplacingOccurrencesOfString:@" " withString:@""];
-                    //Class myFoo = [NSFoo rt_createSubclassNamed: [spacelessLabel stringByAppendingString:@"ListViewController"]];
-                    
-					PLCustomListViewController *controller = [PLCustomListViewController new];
-					if (image){
-						[controller setOurIcon:image];
-					}
-					[controller setTitle:label];
-					[controller setMenuItems:items]; //these are just dictionary menu items loaded from our plist, will be converted later
+			//we need to configure this settings item later, so we use the childBlocks based init
+
+			TSKSettingItem *settingsItem = [TSKSettingItem childPaneItemWithTitle:label description:description representedObject:nil keyPath:nil childControllerBlock:^(TSKSettingItem *object) {
+				PLCustomListViewController* controller = [object controller];
+				if (controller)
 					return controller;
 
 				NSLog(@"[preferenceloader] self: %@ object: %@", self, object);
