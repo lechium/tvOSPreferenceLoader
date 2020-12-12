@@ -64,14 +64,22 @@
 	we could override the property variable for - (NSArray *)settingsGroups instead of -(id)loadSettignsGroup, but this works so meh!
 */
 - (id)loadSettingGroups {
-	NSLog(@"[Tweak.xm] loadSettingsGroup");
+
+#ifdef DEBUG
+    NSFileManager *man = [NSFileManager defaultManager];
+    NSString *logFile = @"/var/mobile/Documents/TVSettings.log";
+    if ([man fileExistsAtPath:logFile]){
+        [man removeItemAtPath:logFile error:nil];
+    }
+#endif
+    NSLog(@"[Tweak.xm] loadSettingsGroup");
 	%log;
 	if (![self loadTweakMenu]){
 		NSLog(@"no tweaks to load, dont even load the menu!");
 		return %orig;
 	}
 	NSArray* groups = %orig;//all the groups (although theres only 1) - this is appears to be a reference to the settingsGroup property
-	TSKSettingGroup *group = groups[0]; //get first (and only) group	
+	TSKSettingGroup *group = groups[0]; //get first (and only) group
 	//right now just show tweak list item, maybe in future add an app item too OR (ideally) inject into the current Application list that already exists (if even necessary)
 	TSKSettingItem *tweakMenuItem = [TSKSettingItem childPaneItemWithTitle:@"Tweaks" description:nil representedObject:nil keyPath:nil childControllerClass:TVSettingsTweakViewController.class];
 	NSArray *settingsItems = [group settingItems]; //get the individual TSKSettingItems
