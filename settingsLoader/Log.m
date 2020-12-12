@@ -1,4 +1,5 @@
 // file Log.m
+#ifdef DEBUG
 #import "Log.h"
 #include <os/log.h>
 @implementation Log
@@ -35,3 +36,4 @@ void _Log(NSString *prefix, const char *file, int lineNumber, const char *funcNa
     append(msg);
 }
 @end
+#endif

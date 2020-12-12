@@ -13,10 +13,10 @@
 @property (nonatomic,retain) TSKSettingItem * editingItem; 
 @property (nonatomic,weak) id<TSKSettingItemEditingControllerDelegate> editingDelegate; 
 @required
--(void)setEditingDelegate:(id)arg1;
+-(void)setEditingDelegate:(id<TSKSettingItemEditingControllerDelegate>)arg1;
 -(id<TSKSettingItemEditingControllerDelegate>)editingDelegate;
 -(TSKSettingItem *)editingItem;
--(void)setEditingItem:(id)arg1;
+-(void)setEditingItem:(TSKSettingItem *)arg1;
 
 @end
 

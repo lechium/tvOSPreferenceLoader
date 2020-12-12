@@ -33,7 +33,7 @@
 @property (assign,nonatomic) BOOL shouldProcessUpdates;                                                                                                              //@synthesize shouldProcessUpdates=_shouldProcessUpdates - In the implementation block
 @property (setter=_setInitialFocusedSettingItem:,getter=_initialFocusedSettingItem,nonatomic,weak) TSKSettingItem * initialFocusedSettingItem;              //@synthesize initialFocusedSettingItem=_initialFocusedSettingItem - In the implementation block
 @property (nonatomic,retain) UIViewController * previewViewController;                                                                                               //@synthesize previewViewController=_previewViewController - In the implementation block
-//@property (readonly) unsigned long long hash;
+//@property (readonly) NSUInteger hash;
 @property (readonly) Class superclass; 
 @property (copy,readonly) NSString * description; 
 @property (copy,readonly) NSString * debugDescription; 

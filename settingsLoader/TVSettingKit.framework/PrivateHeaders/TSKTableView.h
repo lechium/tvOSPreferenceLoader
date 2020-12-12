@@ -22,7 +22,7 @@
 
 @property (nonatomic,weak) id<TSKTableViewDelegate> delegate; 
 @property (nonatomic,copy,readonly) NSIndexPath * indexPathForLastFocusedItem;              //@synthesize indexPathForLastFocusedItem=_indexPathForLastFocusedItem - In the implementation block
-@property (readonly) unsigned long long hash; 
+@property (readonly) NSUInteger hash; 
 @property (readonly) Class superclass; 
 @property (copy,readonly) NSString * description; 
 @property (copy,readonly) NSString * debugDescription; 

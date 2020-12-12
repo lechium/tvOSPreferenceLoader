@@ -28,7 +28,7 @@
 @property (nonatomic,retain) UIViewController* previewProvider;              //@synthesize previewProvider=_previewProvider - In the implementation block
 @property (nonatomic,readonly) UINavigationController * navigationController;               //@synthesize navigationController=_navigationController - In the implementation block
 @property (nonatomic,readonly) UIViewController * previewViewController;                    //@synthesize previewViewController=_previewViewController - In the implementation block
-@property (readonly) unsigned long long hash; 
+@property (readonly) NSUInteger hash; 
 @property (readonly) Class superclass; 
 @property (copy,readonly) NSString * description; 
 @property (copy,readonly) NSString * debugDescription; 

@@ -19,7 +19,7 @@
 }
 
 @property (assign,nonatomic) BOOL showSpinner;                      //@synthesize showSpinner=_showSpinner - In the implementation block
-@property (readonly) unsigned long long hash; 
+@property (readonly) NSUInteger hash; 
 @property (readonly) Class superclass; 
 @property (copy,readonly) NSString * description; 
 @property (copy,readonly) NSString * debugDescription; 

@@ -24,6 +24,11 @@ preferenceBundleGroups is called by loadSettingGroups which is the initial entry
 #import "TVSPreferences.h"
 #import "Log.h"
 
+@interface UIViewController (clean_warning)
+- (id)defaultPreviewViewController; //doesnt exist in UIViewController but it will always exist for us i believe
++ (id)defaultPreviewViewController;
+@end
+
 @interface PLCustomListViewController: TSKViewController
 
 @property (nonatomic, strong) NSDictionary *rootPlist;
@@ -31,7 +36,6 @@ preferenceBundleGroups is called by loadSettingGroups which is the initial entry
 @property (nonatomic, strong) NSArray *menuItems;
 @property (nonatomic, strong) UIImage *ourIcon;
 
-- (void)showTextFieldControllerForItem:(TSKSettingItem *)item;
 - (void)relaunchBackboardd;
 - (void)showMissingActionAlert;
 @end
@@ -78,10 +82,10 @@ preferenceBundleGroups is called by loadSettingGroups which is the initial entry
 - (TSKTableViewController *)previousViewController {
     NSInteger vcCount = [[self viewControllers] count];
     if (vcCount == 1){
-        return [self visibleViewController];
+        return (TSKTableViewController*)[self visibleViewController];
     }
     NSInteger desiredIndex = vcCount - 2;
-    return [self viewControllers][desiredIndex];
+    return (TSKTableViewController*)[self viewControllers][desiredIndex];
 }
 
 @end
@@ -172,7 +176,7 @@ This is where it converts our plist entries into TSKSettingGroups/Items that can
             BOOL defaultOn = [obj[@"default"] boolValue];
 			id facade = nil;
             NSString *domain = obj[@"defaults"];
-            NSString *postNotification = obj[@"PostNotification"];
+            //NSString *postNotification = obj[@"PostNotification"];
             facade = [[NSClassFromString(@"TVSettingsPreferenceFacade") alloc] initWithDomain:domain notifyChanges:TRUE];
 			TSKSettingItem *settingsItem = [TSKSettingItem toggleItemWithTitle:label description:description representedObject:facade keyPath:key onTitle:nil offTitle:nil];
             if (defaultOn){
@@ -195,7 +199,6 @@ This is where it converts our plist entries into TSKSettingGroups/Items that can
             }
 			NSString *description = obj[@"description"];
 			NSString *domain = obj[@"defaults"];
-            BOOL isDefault = [obj[@"default"] boolValue];
             NSString *keyboardType = obj[@"keyboard"]; //numbers or phone
             NSString *autoCaps = obj[@"autoCaps"]; //sentences, words, all
             BOOL isIP = [obj[@"isIP"] boolValue]; //use numbers keyboard
@@ -376,7 +379,7 @@ There is a likely a more elegant and proper way to do this, but it works for now
             [self setPreviewViewController:[[TSKPreviewViewController alloc] init]];
         }
     }
-    return [super previewViewController];
+    return (TSKPreviewViewController*)[super previewViewController];
 }
 
 -(id)previewForItemAtIndexPath:(NSIndexPath*)indexPath {
@@ -384,7 +387,7 @@ There is a likely a more elegant and proper way to do this, but it works for now
     TSKSettingItem *currentItem = currentGroup.settingItems[indexPath.row];
     NSString *desc = [currentItem localizedDescription];
     UIImage *icon = [self ourIcon];
-    TSKPreviewViewController *item = [self previewViewController];
+    TSKPreviewViewController *item = (TSKPreviewViewController*)[self previewViewController];
     NSLog(@"%@ previewForItemAtIndexPath: %@", self, item);
     if (icon != nil) {
         TSKVibrantImageView *imageView = [[TSKVibrantImageView alloc] initWithImage:icon];
@@ -413,7 +416,7 @@ There is a likely a more elegant and proper way to do this, but it works for now
 @implementation TVSettingsTweakViewController
 
 -(TSKPreviewViewController*)previewViewController {
-    TSKPreviewViewController *vc = [super previewViewController];
+    TSKPreviewViewController *vc = (TSKPreviewViewController*)[super previewViewController];
     if (vc == nil) {
         vc = [[TSKPreviewViewController alloc] init];
         [super setPreviewViewController:vc];
@@ -651,7 +654,7 @@ There is a likely a more elegant and proper way to do this, but it works for now
 		[currentItem setPreviewViewController:previewItem];
 	}
 	[previewItem setDescriptionText:desc];
-	TSKVibrantImageView *imageView = [previewItem contentView];
+	TSKVibrantImageView *imageView = (TSKVibrantImageView*)[previewItem contentView];
 	if (imageView == nil) {
 		imageView = [[TSKVibrantImageView alloc] initWithImage:icon];
 		[previewItem setContentView:imageView];
