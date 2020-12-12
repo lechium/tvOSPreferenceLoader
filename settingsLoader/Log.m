@@ -4,7 +4,7 @@
 @implementation Log
 
 #define LOG_ERROR(format, ...) do { \
-    os_log_error(OS_LOG_DEFAULT, "[tvOSPreferenceLoader]: " format "\n", ##__VA_ARGS__); \
+    os_log_error(OS_LOG_DEFAULT, "[tvOSPreferenceLoader] " format "\n", ##__VA_ARGS__); \
 } while (0);
 
 void append(NSString *msg){
@@ -30,8 +30,8 @@ void _Log(NSString *prefix, const char *file, int lineNumber, const char *funcNa
     format = [format stringByAppendingString:@"\n"];
     NSString *msg = [[NSString alloc] initWithFormat:[NSString stringWithFormat:@"%@",format] arguments:ap];   
     va_end (ap);
-    fprintf(stderr,"[tvOSPreferenceLoader] %s%50s:%3d - %s",[prefix UTF8String], funcName, lineNumber, [msg UTF8String]);
-    LOG_ERROR("[tvOSPreferenceLoader] %s%50s:%3d - %s",[prefix UTF8String], funcName, lineNumber, [msg UTF8String]);
+    fprintf(stderr,"%s%50s:%3d - %s",[prefix UTF8String], funcName, lineNumber, [msg UTF8String]);
+    LOG_ERROR("%s%50s:%3d - %s",[prefix UTF8String], funcName, lineNumber, [msg UTF8String]);
     append(msg);
 }
 @end

@@ -45,24 +45,24 @@ preferenceBundleGroups is called by loadSettingGroups which is the initial entry
 -(PLCustomListViewController *)controller
 {
     PLCustomListViewController *controller = objc_getAssociatedObject(self, @selector(controller));
-    NSLog(@"[preferenceloader] %@ controller: %@", self, controller);
+    NSLog(@"%@ controller: %@", self, controller);
     return controller;
 }
 
 - (void)setController:(PLCustomListViewController*)controller {
-    NSLog(@"[preferenceloader] %@ setPreviewViewController: %@", self, controller);
+    NSLog(@"%@ setPreviewViewController: %@", self, controller);
     objc_setAssociatedObject(self, @selector(controller), controller, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
 - (TSKPreviewViewController *)previewViewController
 {
     TSKPreviewViewController *previewViewController = objc_getAssociatedObject(self, @selector(previewViewController));
-    NSLog(@"[preferenceloader] %@ previewViewController: %@", self, previewViewController);
+    NSLog(@"%@ previewViewController: %@", self, previewViewController);
     return previewViewController;
 }
 
 - (void)setPreviewViewController:(TSKPreviewViewController *)previewViewController {
-    NSLog(@"[preferenceloader] %@ setPreviewViewController: %@", self, previewViewController);
+    NSLog(@"%@ setPreviewViewController: %@", self, previewViewController);
     objc_setAssociatedObject(self, @selector(previewViewController), previewViewController, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 @end
@@ -372,7 +372,7 @@ There is a likely a more elegant and proper way to do this, but it works for now
 -(TSKPreviewViewController*)previewViewController {
     @synchronized (self) {
         if ([super previewViewController] == nil) {
-            NSLog(@"[preferenceloader] %@: generating a previewViewController :(", self);
+            NSLog(@"%@: generating a previewViewController :(", self);
             [self setPreviewViewController:[[TSKPreviewViewController alloc] init]];
         }
     }
@@ -385,7 +385,7 @@ There is a likely a more elegant and proper way to do this, but it works for now
     NSString *desc = [currentItem localizedDescription];
     UIImage *icon = [self ourIcon];
     TSKPreviewViewController *item = [self previewViewController];
-    NSLog(@"[preferenceloader] %@ previewForItemAtIndexPath: %@", self, item);
+    NSLog(@"%@ previewForItemAtIndexPath: %@", self, item);
     if (icon != nil) {
         TSKVibrantImageView *imageView = [[TSKVibrantImageView alloc] initWithImage:icon];
         [item setContentView:imageView];
@@ -479,8 +479,8 @@ There is a likely a more elegant and proper way to do this, but it works for now
 			//NSLog(@"icon: %@", iconPath);
 			NSString *fullIconPath = [preferencesPath stringByAppendingPathComponent:iconPath];
 			UIImage *image = [UIImage imageWithContentsOfFile:fullIconPath];
-			//NSLog(@"[preferenceloader] fullIconPath: %@", fullIconPath);
-			//NSLog(@"[preferenceloader] image: %@", image);
+			//NSLog(@"fullIconPath: %@", fullIconPath);
+			//NSLog(@"image: %@", image);
 
 			//we need to configure this settings item later, so we use the childBlocks based init
 
@@ -489,7 +489,7 @@ There is a likely a more elegant and proper way to do this, but it works for now
 				if (controller)
 					return controller;
 
-				NSLog(@"[preferenceloader] self: %@ object: %@", self, object);
+				NSLog(@"self: %@ object: %@", self, object);
 				
 				controller = [PLCustomListViewController new];
 				if (image){
@@ -601,11 +601,11 @@ There is a likely a more elegant and proper way to do this, but it works for now
 		    NSString *iconPath = [bundlePath stringByAppendingPathComponent:iconKey];
 		    //NSString *iconPath =[[NSBundle mainBundle] pathForResource:[iconKey stringByDeletingPathExtension] ofType:[iconKey pathExtension]];
 
-		    //NSLog(@"[preferenceloader] iconPath: %@", iconPath);
+		    //NSLog(@"iconPath: %@", iconPath);
 		    UIImage *image = [UIImage imageWithContentsOfFile:iconPath];
-		    //NSLog(@"[preferenceloader] image: %@", image);
+		    //NSLog(@"image: %@", image);
 		    [item setItemIcon:image];
-		    //NSLog(@"[preferenceloader] item: %@ icon: %@", item, [item itemIcon]);
+		    //NSLog(@"item: %@ icon: %@", item, [item itemIcon]);
 		    NSString *className = prefBundle.infoDictionary[@"NSPrincipalClass"];
 		    TSKPreviewViewController *previewVC = nil;
 		    if (className) {
