@@ -6,7 +6,9 @@
 #import <UIKit/UIKit.h>
 #import "TVSettingsTweakViewController.h"
 #import <objc/runtime.h>
+#ifdef DEBUG
 #import "Log.h"
+#endif
 // static NSInteger PSSpecifierSort(PSSpecifier *a1, PSSpecifier *a2, void *context) {
 // 	NSString *string1 = [a1 name];
 // 	NSString *string2 = [a2 name];
@@ -64,8 +66,6 @@
 - (id)loadSettingGroups {
 	NSLog(@"[Tweak.xm] loadSettingsGroup");
 	%log;
-	NSLog(@"########## I FUCKING HATE YOU APPLE");
-	HBLogDebug(@"WHERE THE FUCK ARE YOU!?!?!?!?!?!?!!?!?!?!?!");
 	if (![self loadTweakMenu]){
 		NSLog(@"no tweaks to load, dont even load the menu!");
 		return %orig;
