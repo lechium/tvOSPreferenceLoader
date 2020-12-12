@@ -1,12 +1,13 @@
 ARCHS = arm64
 TARGET = appletv
+#THEOS_DEVICE_IP = 13tv.local
 export GO_EASY_ON_ME=1
 export SDKVERSION=12.4
 include $(THEOS)/makefiles/common.mk
 TWEAK_NAME = settingsLoader
 settingsLoader_FILES = Tweak.xm TVSettingsTweakViewController.m Log.m
 settingsLoader_LIBRARIES = substrate
-settingsLoader_FRAMEWORKS = Foundation UIKit MAObjCRuntime
+settingsLoader_FRAMEWORKS = Foundation UIKit
 settingsLoader_PRIVATEFRAMEWORKS = TVSettingKit
 settingsLoader_CFLAGS += -I. -F. -ITVSettings -ITVSettingsKit
 settingsLoader_LDFLAGS = -F. -undefined dynamic_lookup

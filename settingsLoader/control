@@ -1,6 +1,6 @@
 Package: preferenceloader
 Name: preferenceloader
-Depends: mobilesubstrate (>=0.0.2-1), com.mikeash.maobjcruntime
+Depends: mobilesubstrate (>=0.0.2-1)
 Version: 1.2
 Architecture: appletvos-arm64
 Description: load preferences in style, based on Dustin Howett's iOS version.
