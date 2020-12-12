@@ -1,6 +1,6 @@
 target = appletv:12.1
 GO_EASY_ON_ME=1
-THEOS_DEVICE_IP=13tv.local
+#THEOS_DEVICE_IP=13tv.local
 DEBUG = 0
 INSTALL_TARGET_PROCESSES = TVSettings
 include $(THEOS)/makefiles/common.mk
