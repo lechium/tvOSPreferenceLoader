@@ -548,7 +548,7 @@ There is a likely a more elegant and proper way to do this, but it works for now
 			NSArray *items = plPlist[@"items"];
 			NSString *iconPath = entry[@"icon"];
 			NSString *description = entry[@"description"];
-			NSLog(@"items: %@", items);
+			//NSLog(@"items: %@", items);
 
 			//NSLog(@"creating menu items!!");
 			NSString *fullIconPath = [preferencesPath stringByAppendingPathComponent:iconPath];
@@ -718,10 +718,13 @@ There is a likely a more elegant and proper way to do this, but it works for now
 	UIImage *icon = [currentItem itemIcon];
 	//added a category to make item icons easier to get and set per item.
 	TSKPreviewViewController *previewItem = [currentItem previewViewController];
-	if (!previewItem) {
+    NSLog(@"preview item :%@ icon; %@ for item %@", previewItem, icon, currentItem);
+	if (!previewItem || !icon) {
 		if (icon == nil) {
 			//take the previous view controller on the navigation stack and use the default controller from that
+            NSLog(@"we got no icon!!");
 			previewItem = [[[self navigationController] previousViewController] defaultPreviewViewController];
+            return previewItem;
 		} else {
 			previewItem = [[TSKPreviewViewController alloc] init];
 		}
