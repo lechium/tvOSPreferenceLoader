@@ -44,11 +44,23 @@ preferenceBundleGroups is called by loadSettingGroups which is the initial entry
 @interface TSKSettingItem (preferenceLoader)
 @property (nonatomic, strong) TSKPreviewViewController *previewViewController;
 @property (nonatomic, strong) id controller;
+@property (nonatomic, strong) NSDictionary *specifier;
 @end
 
 @implementation TSKSettingItem (preferenceLoader)
--(PLCustomListViewController *)controller
-{
+
+-(NSDictionary *)specifier {
+    NSDictionary *specifier = objc_getAssociatedObject(self, @selector(specifier));
+    NSLog(@" %@ specifier: %@", self, specifier);
+    return specifier;
+}
+
+- (void)setSpecifier:(NSDictionary*)specifier {
+    NSLog(@"%@ setSpecifier: %@", self, specifier);
+    objc_setAssociatedObject(self, @selector(specifier), specifier, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
+
+-(PLCustomListViewController *)controller {
     PLCustomListViewController *controller = objc_getAssociatedObject(self, @selector(controller));
     NSLog(@"%@ controller: %@", self, controller);
     return controller;
@@ -293,8 +305,16 @@ This is where it converts our plist entries into TSKSettingGroups/Items that can
                 NSLog(@"found bundle?: %@", prefBundle);
                 [prefBundle load];
                 NSString *className = prefBundle.infoDictionary[@"NSPrincipalClass"];
+                NSLog(@"class name: %@", className);
                 //all items are going to be child panel items for now which allow use to load another class that gives us our groups from said tweak
-                TSKSettingItem *item = [TSKSettingItem childPaneItemWithTitle:labelKey description:descriptionKey representedObject:nil keyPath:nil childControllerClass:NSClassFromString(className)];
+                //TSKSettingItem *item = [TSKSettingItem childPaneItemWithTitle:labelKey description:descriptionKey representedObject:nil keyPath:nil childControllerClass:NSClassFromString(className)];
+                
+                TSKSettingItem *item = [TSKSettingItem childPaneItemWithTitle:labelKey description:descriptionKey representedObject:nil keyPath:nil childControllerBlock:^(TSKSettingItem *object) {
+                    id controller = [[NSClassFromString(className) alloc] init];
+                    NSLog(@"controller: %@", controller);
+                    [controller setSpecifier:obj];
+                    return controller;
+                }];
                 
                 //this does the magic of loading the class from the bundle
                 TSKBundleLoader *bundleLoader = [[TSKBundleLoader alloc] initWithBundle:prefBundle];
@@ -651,7 +671,7 @@ There is a likely a more elegant and proper way to do this, but it works for now
 
 		    //all items are going to be child panel items for now which allow use to load another class that gives us our groups from said tweak
 		    TSKSettingItem *item = [TSKSettingItem childPaneItemWithTitle:labelKey description:descriptionKey representedObject:nil keyPath:nil childControllerClass:NSClassFromString(principalClassKey)];
-
+            
 		    //this does the magic of loading the class from the bundle
 		    TSKBundleLoader *bundleLoader = [[TSKBundleLoader alloc] initWithBundle:prefBundle];
 		    [item setBundleLoader:bundleLoader];
