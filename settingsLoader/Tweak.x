@@ -18,6 +18,23 @@
 
 
 %hook NSBundle
+
+%new + (NSBundle *)bundleWithName:(NSString *)bundleName {
+    NSArray *paths = @[@"/System/Library/PreferenceBundles", @"/Library/PreferenceBundles"];
+    __block NSBundle *_bundle = nil;
+    [paths enumerateObjectsUsingBlock:^(id  _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+        
+        NSString *guessedPath = [[obj stringByAppendingPathComponent:bundleName] stringByAppendingPathExtension:@"bundle"];
+        NSLog(@"testing path: %@", guessedPath);
+        if ([[NSFileManager defaultManager] fileExistsAtPath:guessedPath]){
+            NSLog(@"found path: %@!", guessedPath);
+            _bundle = [NSBundle bundleWithPath:guessedPath];
+            *stop = true;
+        }
+    }];
+    return _bundle;
+}
+
 + (NSBundle *)bundleWithPath:(NSString *)path {
 	NSString *newPath = nil;
 	NSRange sysRange = [path rangeOfString:@"/System/Library/PreferenceBundles" options:0];

@@ -21,6 +21,10 @@ preferenceBundleGroups is called by loadSettingGroups which is the initial entry
 #import "TVSPreferences.h"
 #import "Log.h"
 
+@interface NSBundle (additions)
++(NSBundle *)bundleWithName:(NSString *)path;
+@end
+
 @interface UIViewController (clean_warning)
 - (id)defaultPreviewViewController; //doesnt exist in UIViewController but it will always exist for us i believe
 + (id)defaultPreviewViewController;
@@ -152,16 +156,16 @@ This is where it converts our plist entries into TSKSettingGroups/Items that can
             
 			if (currentGroupItems.count < 1){ //we might not have any group items yet!
 				currentGroupName = label;
-				//NSLog(@"no groups yet, starting with group name: %@", label);
+				NSLog(@"no groups yet, starting with group name: %@", label);
 				haveGroups = TRUE;
 
 			} else {
 				
-				//NSLog(@"we already have a group: %@ adding items %@", currentGroupName, currentGroupItems);
+				NSLog(@"we already have a group: %@ adding items %@", currentGroupName, currentGroupItems);
 				TSKSettingGroup *groupItem = [TSKSettingGroup groupWithTitle:currentGroupName settingItems:currentGroupItems];
             	[groups addObject:groupItem];
 				currentGroupName = label;
-				//NSLog(@"starting a new group: %@", currentGroupName);
+				NSLog(@"starting a new group: %@", currentGroupName);
 				[currentGroupItems removeAllObjects];
 			}
          
@@ -181,10 +185,10 @@ This is where it converts our plist entries into TSKSettingGroups/Items that can
             } else {
                 [settingsItem setDefaultValue:@0];
             }
-			//NSLog(@"created settings item: %@", settingsItem);
+			NSLog(@"created settings item: %@", settingsItem);
 
 			[currentGroupItems addObject:settingsItem];
-            //NSLog(@"currentGroupItems: %@", currentGroupItems);
+            NSLog(@"currentGroupItems: %@", currentGroupItems);
         
         } else if ([cell isEqualToString:@"PSEditTextCell"] || [cell isEqualToString:@"PSSecureEditTextCell"]) {
 
@@ -246,7 +250,7 @@ This is where it converts our plist entries into TSKSettingGroups/Items that can
 			[textEntryItem setKeyboardDetails:obj];
             [currentGroupItems addObject:textEntryItem];
             
-        } else if ([cell isEqualToString:@"PSMultiItemCell"]) { //new tvOS only special addition :D
+        } else if ([cell isEqualToString:@"PSMultiItemCell"] || [cell isEqualToString:@"PSLinkListCell"]) { //new tvOS only special addition :D
 
 			NSString *key = obj[@"key"];
             NSString *label = obj[@"label"];
@@ -254,6 +258,9 @@ This is where it converts our plist entries into TSKSettingGroups/Items that can
 			NSString *domain = obj[@"defaults"];
             NSString *defaultValue = obj[@"default"];
 			NSArray *availableValues = obj[@"availableValues"];
+            if (!availableValues){
+                availableValues = obj[@"validValues"];
+            }
 			id facade = [[NSClassFromString(@"TVSettingsPreferenceFacade") alloc] initWithDomain:domain notifyChanges:TRUE];
 			TSKSettingItem *multiItem = [TSKSettingItem multiValueItemWithTitle:label description:description representedObject:facade keyPath:key availableValues:availableValues];
             if (defaultValue){
@@ -272,12 +279,62 @@ This is where it converts our plist entries into TSKSettingGroups/Items that can
             TSKSettingItem *actionItem = [TSKSettingItem actionItemWithTitle:label description:description representedObject:nil keyPath:nil target:self action:ourAction];
             
             [currentGroupItems addObject:actionItem];
+        } else if ([cell isEqualToString:@"PSLinkCell"]){
+            if([[obj objectForKey:@"isController"] boolValue]) {
+                
+                NSLog(@"creating TSKSettingItems!");
+                
+                NSString *iconKey = obj[@"icon"];
+                NSString *labelKey = obj[@"label"];
+                NSString *bundle = obj[@"bundle"];
+                NSString *descriptionKey = obj[@"description"]; //not part of original spec, custom addition.
+                //load the bundle so we can get access to the class
+                NSBundle *prefBundle = [NSBundle bundleWithName:bundle];
+                NSLog(@"found bundle?: %@", prefBundle);
+                [prefBundle load];
+                NSString *className = prefBundle.infoDictionary[@"NSPrincipalClass"];
+                //all items are going to be child panel items for now which allow use to load another class that gives us our groups from said tweak
+                TSKSettingItem *item = [TSKSettingItem childPaneItemWithTitle:labelKey description:descriptionKey representedObject:nil keyPath:nil childControllerClass:NSClassFromString(className)];
+                
+                //this does the magic of loading the class from the bundle
+                TSKBundleLoader *bundleLoader = [[TSKBundleLoader alloc] initWithBundle:prefBundle];
+                [item setBundleLoader:bundleLoader];
+                
+                //NSLog(@"iconKey: %@", iconKey);
+                
+                NSString *iconPath = [prefBundle.bundlePath stringByAppendingPathComponent:iconKey];
+                //NSString *iconPath =[[NSBundle mainBundle] pathForResource:[iconKey stringByDeletingPathExtension] ofType:[iconKey pathExtension]];
+                
+                //NSLog(@"iconPath: %@", iconPath);
+                UIImage *image = [UIImage imageWithContentsOfFile:iconPath];
+                //NSLog(@"image: %@", image);
+                [item setItemIcon:image];
+                //NSLog(@"item: %@ icon: %@", item, [item itemIcon]);
+                
+                TSKPreviewViewController *previewVC = nil;
+                if (className) {
+                    Class principalClass = NSClassFromString(className);
+                    if (principalClass && [principalClass respondsToSelector:@selector(defaultPreviewViewController)]) {
+                        previewVC = (TSKPreviewViewController*)[principalClass defaultPreviewViewController];
+                    }
+                }
+                if (previewVC == nil) {
+                    previewVC = [[TSKPreviewViewController alloc] init];
+                }
+                if (image != nil && [item previewViewController] == nil) {
+                    TSKVibrantImageView *imageView = [[TSKVibrantImageView alloc] initWithImage:image];
+                    [previewVC setContentView:imageView];
+                }
+                [previewVC setDescriptionText:[item localizedDescription]];
+                [item setPreviewViewController:previewVC];
+                [currentGroupItems addObject:item];
+            }
         }
 		//Since the groups are created when we find the next one, if we are at the last (or only) group we need to create one for the remaining items
-		//NSLog(@"idx: %lu count: %lu", idx, items.count);
+		NSLog(@"idx: %lu count: %lu", idx, items.count);
 		if (idx == items.count-1){
 
-			//NSLog(@"creating final group: %@ with items: %@", currentGroupName, currentGroupItems);
+			NSLog(@"creating final group: %@ with items: %@", currentGroupName, currentGroupItems);
 			TSKSettingGroup *groupItem = [TSKSettingGroup groupWithTitle:currentGroupName settingItems:currentGroupItems];
 			[groups addObject:groupItem];
 		}
@@ -473,14 +530,17 @@ There is a likely a more elegant and proper way to do this, but it works for now
 			NSArray *items = plPlist[@"items"];
 			NSString *iconPath = entry[@"icon"];
 			NSString *description = entry[@"description"];
-			//NSLog(@"items: %@", items);
+			NSLog(@"items: %@", items);
 
-			//NSLog(@"creating menu items!!");
-			//NSLog(@"icon: %@", iconPath);
-			NSString *fullIconPath = [preferencesPath stringByAppendingPathComponent:iconPath];
+			NSLog(@"creating menu items!!");
+			NSLog(@"icon: %@", iconPath);
+            NSString *fullIconPath = [preferencesPath stringByAppendingPathComponent:iconPath];
+            if ([[NSFileManager defaultManager] fileExistsAtPath:iconPath]){
+                fullIconPath = iconPath;
+            }
 			UIImage *image = [UIImage imageWithContentsOfFile:fullIconPath];
-			//NSLog(@"fullIconPath: %@", fullIconPath);
-			//NSLog(@"image: %@", image);
+			NSLog(@"fullIconPath: %@", fullIconPath);
+			NSLog(@"image: %@", image);
 
 			//we need to configure this settings item later, so we use the childBlocks based init
 
@@ -504,7 +564,7 @@ There is a likely a more elegant and proper way to do this, but it works for now
 			[settingsItem setPreviewViewController:[[TSKPreviewViewController alloc] init]];
 			[settingsItem setItemIcon:image];
 			[allTheSpecs addObject:settingsItem];
-			//NSLog(@"made item: %@", settingsItem);
+			NSLog(@"made item: %@", settingsItem);
 			//description:(id)arg2 representedObject:(id)arg3 keyPath:(id)arg4 childControllerBlock:((void(^childControllerBlock)(id object))completionBlock
 		}
 	}
@@ -626,8 +686,8 @@ There is a likely a more elegant and proper way to do this, but it works for now
 		    [items addObject:item];
 	    }
 	} else {
-	
-        NSLog(@"not a bundle! this feature is currently unsupported entry: %@ path: %@", entry, prefBundle);
+        
+        //NSLog(@"not a bundle! this feature is currently unsupported entry: %@ path: %@", entry, prefBundle);
 
 	}
 	return items;
