@@ -448,7 +448,8 @@ There is a likely a more elegant and proper way to do this, but it works for now
     @synchronized (self) {
         if ([super previewViewController] == nil) {
             //NSLog(@"%@: generating a previewViewController :(", self);
-            [self setPreviewViewController:[[TSKPreviewViewController alloc] init]];
+            id preview = [[[self navigationController] previousViewController] defaultPreviewViewController];
+            [self setPreviewViewController:preview];
         }
     }
     return (TSKPreviewViewController*)[super previewViewController];
@@ -718,12 +719,12 @@ There is a likely a more elegant and proper way to do this, but it works for now
 	UIImage *icon = [currentItem itemIcon];
 	//added a category to make item icons easier to get and set per item.
 	TSKPreviewViewController *previewItem = [currentItem previewViewController];
-    NSLog(@"preview item :%@ icon; %@ for item %@", previewItem, icon, currentItem);
+    //NSLog(@"preview item :%@ icon; %@ for item %@", previewItem, icon, currentItem);
 	if (!previewItem || !icon) {
 		if (icon == nil) {
 			//take the previous view controller on the navigation stack and use the default controller from that
-            NSLog(@"we got no icon!!");
 			previewItem = [[[self navigationController] previousViewController] defaultPreviewViewController];
+            NSLog(@"we got no icon, preview item: %@", previewItem);
             return previewItem;
 		} else {
 			previewItem = [[TSKPreviewViewController alloc] init];
