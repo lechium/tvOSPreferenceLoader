@@ -21,6 +21,30 @@
 #import "TVSPreferences.h"
 #import "Log.h"
 
+@implementation TSKTableViewController (preferenceLoader)
+
+-(UITableViewCell *)cellFromSettingsItem:(TSKSettingItem *)settingsItem {
+    NSArray *cells = [self tableViewCells];
+    __block id object = nil;
+    [cells enumerateObjectsUsingBlock:^(TSKTableViewTextCell  *_Nonnull cell, NSUInteger idx, BOOL * _Nonnull stop) {
+        if ([cell item] == settingsItem){
+            object = cell;
+            *stop = true;
+        }
+    }];
+    return object;
+}
+
+- (NSArray *)tableViewCells {
+    UITableView *tv = [self tableView];
+    UITableViewCell *firstCell = (UITableViewCell*)[tv findFirstSubviewWithClass:[UITableViewCell class]];
+    if (firstCell){
+        return [firstCell siblingsInclusive:true];
+    }
+    return nil;
+}
+@end
+
 @interface NSBundle (additions)
 +(NSBundle *)bundleWithName:(NSString *)path;
 @end

@@ -12,7 +12,11 @@
 #import <objc/runtime.h>
 #import "TVSettingsPreferenceFacade.h"
 #import "TVSettingsItemFactory.h"
-
+#import "UIView+RecursiveFind.h"
+@interface TSKTableViewController (preferenceLoader)
+- (NSArray *)tableViewCells;
+- (UITableViewCell *)cellFromSettingsItem:(TSKSettingItem *)settingsItem;
+@end
 
 
 @interface TSKSettingGroup (lazyItems)
