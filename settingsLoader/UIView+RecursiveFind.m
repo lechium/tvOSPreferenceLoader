@@ -1,16 +1,29 @@
 #import "UIView+RecursiveFind.h"
 
+@implementation NSArray (reverse)
+
+- (NSArray *)reverseArray {
+    return [[self reverseObjectEnumerator] allObjects];
+}
+
+@end
+
 @implementation UIView (RecursiveFind)
 
 - (NSArray *)siblingsInclusive:(BOOL)include {
     UIView *superview = [self superview];
     if (!superview) return nil;
-    if (include){
-        return [superview subviews];
+    __block NSMutableArray *sibs = [[superview subviews] mutableCopy];
+    [[superview subviews] enumerateObjectsUsingBlock:^(UIView  *_Nonnull subview, NSUInteger idx, BOOL * _Nonnull stop) {
+        if (![subview isMemberOfClass:[self class]]){
+            [sibs removeObject:subview];
+            NSLog(@"removing object: %@", subview);
+        }
+    }];
+    if (!include){
+        [sibs removeObject:self];
     }
-    NSMutableArray *sibs = [[superview subviews] mutableCopy];
-    [sibs removeObject:self];
-    return sibs;
+    return [sibs reverseArray];
 }
 
 - (BOOL)darkMode {

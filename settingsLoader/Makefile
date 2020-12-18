@@ -5,12 +5,22 @@ DEBUG = 0
 INSTALL_TARGET_PROCESSES = TVSettings
 include $(THEOS)/makefiles/common.mk
 
+LIBRARY_NAME = libprefs
+libprefs_FILES = TVSettingsTweakViewController.m Log.m UIView+RecursiveFind.m
+libprefs_FRAMEWORKS = Foundation UIKit TVSettingKit
+libprefs_CFLAGS = -I. -F. -ITVSettings -fobjc-arc
+libprefs_LDFLAGS = -F.
+
+include $(THEOS_MAKE_PATH)/library.mk
+
 TWEAK_NAME = settingsLoader
-settingsLoader_FILES = Tweak.x TVSettingsTweakViewController.m Log.m UIView+RecursiveFind.m
-#settingsLoader_LIBRARIES = substrate
+settingsLoader_FILES = Tweak.x 
+settingsLoader_LIBRARIES = prefs
 settingsLoader_FRAMEWORKS = Foundation UIKit TVSettingKit
-settingsLoader_CFLAGS += -I. -F. -ITVSettings -fobjc-arc
-settingsLoader_LDFLAGS = -F. #-undefined dynamic_lookup
+settingsLoader_CFLAGS += -I. -F. -ITVSettingsma -fobjc-arc
+settingsLoader_LDFLAGS = -F. -L$(THEOS_OBJ_DIR) -undefined dynamic_lookup
 
 include $(THEOS_MAKE_PATH)/tweak.mk
 
+after-libprefs-stage::
+	echo "$(THEOS_OBJ_DIR)"
