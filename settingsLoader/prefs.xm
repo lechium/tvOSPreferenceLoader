@@ -1,11 +1,3 @@
-//
-//  TVSettingsTweakViewController.m
-//  nitoTV4
-//
-//  Created by Kevin Bradley on 7/28/18.
-//  Copyright © 2018 nito. All rights reserved.
-//
-
 /*
  
  This is where a lot of the 'magic' happens specifiersFromEntry:sourcePreferenceLoaderBundlePath:title is pulled straight 
@@ -15,11 +7,65 @@
  
  */
 
-#import "TVSettingsTweakViewController.h"
+#import "prefs.h"
 #import "NSTask.h"
 #import <UIKit/UITextInputTraits.h>
 #import "TVSPreferences.h"
 #import "Log.h"
+
+@implementation NSArray (reverse)
+
+- (NSArray *)reverseArray {
+    return [[self reverseObjectEnumerator] allObjects];
+}
+@end
+
+@implementation UIView (RecursiveFind)
+
+- (NSArray *)siblingsInclusive:(BOOL)include {
+    UIView *superview = [self superview];
+    if (!superview) return nil;
+    __block NSMutableArray *sibs = [[superview subviews] mutableCopy];
+    [[superview subviews] enumerateObjectsUsingBlock:^(UIView  *_Nonnull subview, NSUInteger idx, BOOL * _Nonnull stop) {
+        if (![subview isMemberOfClass:[self class]]){
+            [sibs removeObject:subview];
+            NSLog(@"removing object: %@", subview);
+        }
+    }];
+    if (!include){
+        [sibs removeObject:self];
+    }
+    return [sibs reverseArray];
+}
+
+- (BOOL)darkMode {
+    
+    if (self.traitCollection.userInterfaceStyle == UIUserInterfaceStyleDark){
+        return TRUE;
+    }
+    return FALSE;
+}
+
+- (UIView *)findFirstSubviewWithClass:(Class)theClass {
+    if ([self isKindOfClass:theClass]) {
+            return self;
+        }
+    for (UIView *v in self.subviews) {
+        UIView *theView = [v findFirstSubviewWithClass:theClass];
+        if (theView != nil){
+            return theView;
+        }
+    }
+    return nil;
+}
+
+- (void)removeAllSubviews {
+    for (UIView *view in self.subviews) {
+        [view removeFromSuperview];
+    }
+}
+
+@end
 
 @implementation TSKTableViewController (preferenceLoader)
 

@@ -12,8 +12,16 @@
 #import <objc/runtime.h>
 #import "TVSettingsPreferenceFacade.h"
 #import "TVSettingsItemFactory.h"
-#import "UIView+RecursiveFind.h"
-#import "PLCustomListViewController.h"
+
+@interface NSArray (reverse)
+- (NSArray *)reverseArray;
+@end
+@interface UIView (RecursiveFind)
+- (NSArray *)siblingsInclusive:(BOOL)include;// inclusive means we include ourselves as well
+- (BOOL)darkMode;
+- (UIView *)findFirstSubviewWithClass:(Class)theClass;
+- (void)removeAllSubviews;
+@end
 
 @interface UINavigationController (convenience)
 - (TSKTableViewController *)previousViewController;
@@ -56,10 +64,17 @@
 - (NSArray *)menuItemsFromItems:(NSArray *)items;
 @end
 
-
 @interface TVSettingsTweakViewController : TSKViewController
-
 @property (nonatomic, strong) UIImage *defaultImage;
-
 @end
 
+@interface PLCustomListViewController: TSKViewController
+
+@property (nonatomic, strong) NSDictionary *rootPlist;
+@property (nonatomic, strong) NSString *ourDomain;
+@property (nonatomic, strong) NSArray *menuItems;
+@property (nonatomic, strong) UIImage *ourIcon;
+
+- (void)relaunchBackboardd;
+- (void)showMissingActionAlert;
+@end

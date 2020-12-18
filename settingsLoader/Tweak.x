@@ -4,7 +4,7 @@
 #import <substrate.h>
 #import <sys/utsname.h>
 #import <UIKit/UIKit.h>
-#import "TVSettingsTweakViewController.h"
+#import "prefs.h"
 #import <objc/runtime.h>
 #ifdef DEBUG
 #import "Log.h"
