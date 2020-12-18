@@ -41,15 +41,12 @@
 - (UITableViewCell *)cellFromSettingsItem:(TSKSettingItem *)settingsItem;
 @end
 
-@interface TSKSettingGroup (libprefs)
-+ (BOOL)environmentPassesPreferenceLoaderFilter:(NSDictionary *)filter;
-@end
-
 @interface TSKSettingGroup (lazyItems)
 - (void)addSettingItem:(TSKSettingItem *)item;
 @end
 
 @interface TSKSettingItem (preferenceLoader)
++ (BOOL)environmentPassesPreferenceLoaderFilter:(NSDictionary *)filter;
 @property (nonatomic, strong) TSKPreviewViewController *previewViewController;
 @property (nonatomic, strong) id controller;
 @property (nonatomic, strong) NSDictionary *specifier;

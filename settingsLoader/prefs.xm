@@ -93,64 +93,6 @@
 
 @implementation TSKSettingItem (preferenceLoader)
 
--(NSDictionary *)specifier {
-    NSDictionary *specifier = objc_getAssociatedObject(self, @selector(specifier));
-    //NSLog(@" %@ specifier: %@", self, specifier);
-    return specifier;
-}
-
-- (void)setSpecifier:(NSDictionary*)specifier {
-    //NSLog(@"%@ setSpecifier: %@", self, specifier);
-    objc_setAssociatedObject(self, @selector(specifier), specifier, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-}
-
--(PLCustomListViewController *)controller {
-    PLCustomListViewController *controller = objc_getAssociatedObject(self, @selector(controller));
-    NSLog(@"%@ controller: %@", self, controller);
-    return controller;
-}
-
-- (void)setController:(PLCustomListViewController*)controller {
-    NSLog(@"%@ setPreviewViewController: %@", self, controller);
-    objc_setAssociatedObject(self, @selector(controller), controller, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-}
-
-- (TSKPreviewViewController *)previewViewController
-{
-    TSKPreviewViewController *previewViewController = objc_getAssociatedObject(self, @selector(previewViewController));
-    NSLog(@"%@ previewViewController: %@", self, previewViewController);
-    return previewViewController;
-}
-
-- (void)setPreviewViewController:(TSKPreviewViewController *)previewViewController {
-    NSLog(@"%@ setPreviewViewController: %@", self, previewViewController);
-    objc_setAssociatedObject(self, @selector(previewViewController), previewViewController, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-}
-@end
-
-
-
-@implementation UINavigationController (convenience)
-
-- (TSKTableViewController *)previousViewController {
-    NSInteger vcCount = [[self viewControllers] count];
-    if (vcCount == 1){
-        return (TSKTableViewController*)[self visibleViewController];
-    }
-    NSInteger desiredIndex = vcCount - 2;
-    return (TSKTableViewController*)[self viewControllers][desiredIndex];
-}
-
-@end
-
-/* {{{ Constants */
-static NSString *const PLBundleKey = @"pl_bundle";
-NSString *const PLFilterKey = @"pl_filter";
-static NSString *const PLAlternatePlistNameKey = @"pl_alt_plist_name";
-/* }}} */
-
-
-@implementation TSKSettingGroup (libprefs)
 + (BOOL)environmentPassesPreferenceLoaderFilter:(NSDictionary *)filter {
     
     if(!filter) return YES;
@@ -174,7 +116,55 @@ static NSString *const PLAlternatePlistNameKey = @"pl_alt_plist_name";
 //    return [self propertyForKey:PLBundleKey];
 //}
 
+-(NSDictionary *)specifier {
+    NSDictionary *specifier = objc_getAssociatedObject(self, @selector(specifier));
+    //NSLog(@" %@ specifier: %@", self, specifier);
+    return specifier;
+}
+
+- (void)setSpecifier:(NSDictionary*)specifier {
+    //NSLog(@"%@ setSpecifier: %@", self, specifier);
+    objc_setAssociatedObject(self, @selector(specifier), specifier, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
+
+-(PLCustomListViewController *)controller {
+    PLCustomListViewController *controller = objc_getAssociatedObject(self, @selector(controller));
+    return controller;
+}
+
+- (void)setController:(PLCustomListViewController*)controller {
+    objc_setAssociatedObject(self, @selector(controller), controller, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
+
+- (TSKPreviewViewController *)previewViewController
+{
+    TSKPreviewViewController *previewViewController = objc_getAssociatedObject(self, @selector(previewViewController));
+    return previewViewController;
+}
+
+- (void)setPreviewViewController:(TSKPreviewViewController *)previewViewController {
+    objc_setAssociatedObject(self, @selector(previewViewController), previewViewController, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
 @end
+
+@implementation UINavigationController (convenience)
+
+- (TSKTableViewController *)previousViewController {
+    NSInteger vcCount = [[self viewControllers] count];
+    if (vcCount == 1){
+        return (TSKTableViewController*)[self visibleViewController];
+    }
+    NSInteger desiredIndex = vcCount - 2;
+    return (TSKTableViewController*)[self viewControllers][desiredIndex];
+}
+
+@end
+
+/* {{{ Constants */
+static NSString *const PLBundleKey = @"pl_bundle";
+NSString *const PLFilterKey = @"pl_filter";
+static NSString *const PLAlternatePlistNameKey = @"pl_alt_plist_name";
+/* }}} */
 
 /*
  
