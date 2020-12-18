@@ -45,32 +45,6 @@
 }
 @end
 
-@interface NSBundle (additions)
-+(NSBundle *)bundleWithName:(NSString *)path;
-@end
-
-@interface UIViewController (clean_warning)
-- (id)defaultPreviewViewController; //doesnt exist in UIViewController but it will always exist for us i believe
-+ (id)defaultPreviewViewController;
-@end
-
-@interface PLCustomListViewController: TSKViewController
-
-@property (nonatomic, strong) NSDictionary *rootPlist;
-@property (nonatomic, strong) NSString *ourDomain;
-@property (nonatomic, strong) NSArray *menuItems;
-@property (nonatomic, strong) UIImage *ourIcon;
-
-- (void)relaunchBackboardd;
-- (void)showMissingActionAlert;
-@end
-
-@interface TSKSettingItem (preferenceLoader)
-@property (nonatomic, strong) TSKPreviewViewController *previewViewController;
-@property (nonatomic, strong) id controller;
-@property (nonatomic, strong) NSDictionary *specifier;
-@end
-
 @implementation TSKSettingItem (preferenceLoader)
 
 -(NSDictionary *)specifier {
@@ -108,11 +82,7 @@
 }
 @end
 
-@interface UINavigationController (convenience)
 
-- (TSKTableViewController *)previousViewController;
-
-@end
 
 @implementation UINavigationController (convenience)
 
@@ -133,9 +103,6 @@ NSString *const PLFilterKey = @"pl_filter";
 static NSString *const PLAlternatePlistNameKey = @"pl_alt_plist_name";
 /* }}} */
 
-@interface TSKSettingGroup (libprefs)
-+ (BOOL)environmentPassesPreferenceLoaderFilter:(NSDictionary *)filter;
-@end
 
 @implementation TSKSettingGroup (libprefs)
 + (BOOL)environmentPassesPreferenceLoaderFilter:(NSDictionary *)filter {
@@ -498,8 +465,6 @@ static NSString *const PLAlternatePlistNameKey = @"pl_alt_plist_name";
 
 @end
 
-
-
 @interface TVSettingsTweakViewController() {
     
     //in case we ever want / need any private vars;
@@ -507,8 +472,6 @@ static NSString *const PLAlternatePlistNameKey = @"pl_alt_plist_name";
 }
 
 @end
-
-
 
 @implementation TVSettingsTweakViewController
 

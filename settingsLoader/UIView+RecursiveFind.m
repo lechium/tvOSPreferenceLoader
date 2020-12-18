@@ -34,14 +34,6 @@
     return FALSE;
 }
 
-
-- (id) clone {
-    NSData *archivedViewData = [NSKeyedArchiver archivedDataWithRootObject: self];
-    id clone = [NSKeyedUnarchiver unarchiveObjectWithData:archivedViewData];
-    return clone;
-    
-}
-
 - (UIImage *)snapshotViewWithSize:(CGSize)size
 {
     UIGraphicsBeginImageContextWithOptions(size, self.opaque, 0);
