@@ -57,8 +57,9 @@
 @property (nonatomic, strong) UIImage *itemIcon;
 @end
 
-@interface TSKViewController (science)
+@interface TSKViewController (preferenceLoader)
 - (NSArray *)menuItemsFromItems:(NSArray *)items;
+- (NSArray *)specifiersFromEntry:(NSDictionary *)entry sourcePreferenceLoaderBundlePath:(NSString *)sourceBundlePath title:(NSString *)title;
 @end
 
 @interface TVSettingsTweakViewController : TSKViewController

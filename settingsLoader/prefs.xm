@@ -170,10 +170,126 @@ static NSString *const PLAlternatePlistNameKey = @"pl_alt_plist_name";
  
  This is where it converts our plist entries into TSKSettingGroups/Items that can actually be displayed in TVSettings. If applicable.
  
+ */
+
+@implementation TSKViewController (preferenceLoader)
+
+/*
+ 
+ plucked straight from iOS version in prefs.xm, this will return the TSKSettingItem that will get added to our list
  
  */
 
-@implementation TSKViewController (science)
+- (NSArray *)specifiersFromEntry:(NSDictionary *)entry sourcePreferenceLoaderBundlePath:(NSString *)sourceBundlePath title:(NSString *)title {
+    
+    //NSDictionary *specifierPlist = [NSDictionary dictionaryWithObjectsAndKeys:[NSArray arrayWithObjects:entry, nil], @"items", nil];
+    
+    BOOL isBundle = [entry objectForKey:@"bundle"] != nil;
+    //BOOL isLocalizedBundle = ![[sourceBundlePath lastPathComponent] isEqualToString:@"Preferences"];
+    
+    NSBundle *prefBundle;
+    NSString *bundleName = entry[@"bundle"];
+    NSString *bundlePath = entry[@"bundlePath"];
+    
+    if(isBundle) {
+        // Second Try (bundlePath key failed)
+        if(![[NSFileManager defaultManager] fileExistsAtPath:bundlePath])
+            bundlePath = [NSString stringWithFormat:@"/Library/PreferenceBundles/%@.bundle", bundleName];
+        
+        // Third Try (/Library failed)
+        if(![[NSFileManager defaultManager] fileExistsAtPath:bundlePath])
+            bundlePath = [NSString stringWithFormat:@"/System/Library/PreferenceBundles/%@.bundle", bundleName];
+        
+        // Really? (/System/Library failed...)
+        if(![[NSFileManager defaultManager] fileExistsAtPath:bundlePath]) {
+            NSLog(@"Discarding specifier for missing isBundle bundle %@.", bundleName);
+            return nil;
+        }
+        prefBundle = [NSBundle bundleWithPath:bundlePath];
+        NSLog(@"is a bundle: %@!", prefBundle);
+    } else {
+        prefBundle = [NSBundle bundleWithPath:sourceBundlePath];
+        NSLog(@"is NOT a bundle, so we're giving it %@!", prefBundle);
+    }
+    
+    /*
+     
+     entry.plist looks something like this
+     
+     <key>bundle</key>
+     <string>DDBSettings</string>
+     <key>cell</key>
+     <string>PSLinkCell</string>
+     <key>detail</key>
+     <string>DDBSettingsController</string>
+     <key>icon</key>
+     <string>icon.png</string>
+     <key>isController</key>
+     <true/>
+     <key>label</key>
+     <string>Dales Dead Bug</string>
+     <key>description</key>
+     <string>Dales Dead Bug</string>
+     
+     */
+    
+    
+    NSMutableArray *items = [NSMutableArray  new];
+    
+    if(isBundle) {
+        
+        NSLog(@"we got a bundle!");
+        
+        if([[entry objectForKey:@"isController"] boolValue]) {
+            
+            NSLog(@"creating TSKSettingItems!");
+            
+            NSString *principalClassKey = entry[@"detail"];
+            NSString *iconKey = entry[@"icon"]; 
+            NSString *labelKey = entry[@"label"];
+            NSString *descriptionKey = entry[@"description"]; //not part of original spec, custom addition.
+            //load the bundle so we can get access to the class
+            [prefBundle load];
+            
+            //all items are going to be child panel items for now which allow use to load another class that gives us our groups from said tweak
+            TSKSettingItem *item = [TSKSettingItem childPaneItemWithTitle:labelKey description:descriptionKey representedObject:nil keyPath:nil childControllerClass:NSClassFromString(principalClassKey)];
+            
+            //this does the magic of loading the class from the bundle
+            TSKBundleLoader *bundleLoader = [[TSKBundleLoader alloc] initWithBundle:prefBundle];
+            [item setBundleLoader:bundleLoader];
+            
+            //NSLog(@"iconKey: %@", iconKey);
+            
+            NSString *iconPath = [bundlePath stringByAppendingPathComponent:iconKey];
+            //NSString *iconPath =[[NSBundle mainBundle] pathForResource:[iconKey stringByDeletingPathExtension] ofType:[iconKey pathExtension]];
+            
+            //NSLog(@"iconPath: %@", iconPath);
+            UIImage *image = [UIImage imageWithContentsOfFile:iconPath];
+            //NSLog(@"image: %@", image);
+            [item setItemIcon:image];
+            //NSLog(@"item: %@ icon: %@", item, [item itemIcon]);
+            NSString *className = prefBundle.infoDictionary[@"NSPrincipalClass"];
+            TSKPreviewViewController *previewVC = nil;
+            if (className) {
+                Class principalClass = NSClassFromString(className);
+                if (principalClass && [principalClass respondsToSelector:@selector(defaultPreviewViewController)]) {
+                    previewVC = (TSKPreviewViewController*)[principalClass defaultPreviewViewController];
+                }
+            }
+            if (previewVC == nil) {
+                previewVC = [[TSKPreviewViewController alloc] init];
+            }
+            if (image != nil && [item previewViewController] == nil) {
+                TSKVibrantImageView *imageView = [[TSKVibrantImageView alloc] initWithImage:image];
+                [previewVC setContentView:imageView];
+            }
+            [previewVC setDescriptionText:[item localizedDescription]];
+            [item setPreviewViewController:previewVC];
+            [items addObject:item];
+        }
+    } 
+    return items;
+}
 
 - (NSArray *)menuItemsFromItems:(NSArray *)items {
     /* these plists are kind of dumb imo, you need to loop through the items but the way you dilineate groups is they start and stop when the next group is found.
@@ -388,8 +504,6 @@ static NSString *const PLAlternatePlistNameKey = @"pl_alt_plist_name";
     
     return groups;
 }
-
-
 
 @end
 
@@ -613,126 +727,7 @@ static NSString *const PLAlternatePlistNameKey = @"pl_alt_plist_name";
 }
 
 
-/*
- 
- plucked straight from iOS version in prefs.xm, this will return the TSKSettingItem that will get added to our list
- 
- */
 
-- (NSArray *)specifiersFromEntry:(NSDictionary *)entry sourcePreferenceLoaderBundlePath:(NSString *)sourceBundlePath title:(NSString *)title {
-    
-    //NSDictionary *specifierPlist = [NSDictionary dictionaryWithObjectsAndKeys:[NSArray arrayWithObjects:entry, nil], @"items", nil];
-    
-    BOOL isBundle = [entry objectForKey:@"bundle"] != nil;
-    //BOOL isLocalizedBundle = ![[sourceBundlePath lastPathComponent] isEqualToString:@"Preferences"];
-    
-    NSBundle *prefBundle;
-    NSString *bundleName = entry[@"bundle"];
-    NSString *bundlePath = entry[@"bundlePath"];
-    
-    if(isBundle) {
-        // Second Try (bundlePath key failed)
-        if(![[NSFileManager defaultManager] fileExistsAtPath:bundlePath])
-            bundlePath = [NSString stringWithFormat:@"/Library/PreferenceBundles/%@.bundle", bundleName];
-        
-        // Third Try (/Library failed)
-        if(![[NSFileManager defaultManager] fileExistsAtPath:bundlePath])
-            bundlePath = [NSString stringWithFormat:@"/System/Library/PreferenceBundles/%@.bundle", bundleName];
-        
-        // Really? (/System/Library failed...)
-        if(![[NSFileManager defaultManager] fileExistsAtPath:bundlePath]) {
-            NSLog(@"Discarding specifier for missing isBundle bundle %@.", bundleName);
-            return nil;
-        }
-        prefBundle = [NSBundle bundleWithPath:bundlePath];
-        NSLog(@"is a bundle: %@!", prefBundle);
-    } else {
-        prefBundle = [NSBundle bundleWithPath:sourceBundlePath];
-        NSLog(@"is NOT a bundle, so we're giving it %@!", prefBundle);
-    }
-    
-    /*
-     
-     entry.plist looks something like this
-     
-     <key>bundle</key>
-     <string>DDBSettings</string>
-     <key>cell</key>
-     <string>PSLinkCell</string>
-     <key>detail</key>
-     <string>DDBSettingsController</string>
-     <key>icon</key>
-     <string>icon.png</string>
-     <key>isController</key>
-     <true/>
-     <key>label</key>
-     <string>Dales Dead Bug</string>
-     <key>description</key>
-     <string>Dales Dead Bug</string>
-     
-     */
-    
-    
-    NSMutableArray *items = [NSMutableArray  new];
-    
-    if(isBundle) {
-        
-        NSLog(@"we got a bundle!");
-        
-        if([[entry objectForKey:@"isController"] boolValue]) {
-            
-            NSLog(@"creating TSKSettingItems!");
-            
-            NSString *principalClassKey = entry[@"detail"];
-            NSString *iconKey = entry[@"icon"]; 
-            NSString *labelKey = entry[@"label"];
-            NSString *descriptionKey = entry[@"description"]; //not part of original spec, custom addition.
-            //load the bundle so we can get access to the class
-            [prefBundle load];
-            
-            //all items are going to be child panel items for now which allow use to load another class that gives us our groups from said tweak
-            TSKSettingItem *item = [TSKSettingItem childPaneItemWithTitle:labelKey description:descriptionKey representedObject:nil keyPath:nil childControllerClass:NSClassFromString(principalClassKey)];
-            
-            //this does the magic of loading the class from the bundle
-            TSKBundleLoader *bundleLoader = [[TSKBundleLoader alloc] initWithBundle:prefBundle];
-            [item setBundleLoader:bundleLoader];
-            
-            //NSLog(@"iconKey: %@", iconKey);
-            
-            NSString *iconPath = [bundlePath stringByAppendingPathComponent:iconKey];
-            //NSString *iconPath =[[NSBundle mainBundle] pathForResource:[iconKey stringByDeletingPathExtension] ofType:[iconKey pathExtension]];
-            
-            //NSLog(@"iconPath: %@", iconPath);
-            UIImage *image = [UIImage imageWithContentsOfFile:iconPath];
-            //NSLog(@"image: %@", image);
-            [item setItemIcon:image];
-            //NSLog(@"item: %@ icon: %@", item, [item itemIcon]);
-            NSString *className = prefBundle.infoDictionary[@"NSPrincipalClass"];
-            TSKPreviewViewController *previewVC = nil;
-            if (className) {
-                Class principalClass = NSClassFromString(className);
-                if (principalClass && [principalClass respondsToSelector:@selector(defaultPreviewViewController)]) {
-                    previewVC = (TSKPreviewViewController*)[principalClass defaultPreviewViewController];
-                }
-            }
-            if (previewVC == nil) {
-                previewVC = [[TSKPreviewViewController alloc] init];
-            }
-            if (image != nil && [item previewViewController] == nil) {
-                TSKVibrantImageView *imageView = [[TSKVibrantImageView alloc] initWithImage:image];
-                [previewVC setContentView:imageView];
-            }
-            [previewVC setDescriptionText:[item localizedDescription]];
-            [item setPreviewViewController:previewVC];
-            [items addObject:item];
-        }
-    } else {
-        
-        //NSLog(@"not a bundle! this feature is currently unsupported entry: %@ path: %@", entry, prefBundle);
-        
-    }
-    return items;
-}
 
 
 -(id)previewForItemAtIndexPath:(NSIndexPath *)indexPath {
