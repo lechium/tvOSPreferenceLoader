@@ -13,6 +13,7 @@
 #import "TVSettingsPreferenceFacade.h"
 #import "TVSettingsItemFactory.h"
 #import "UIView+RecursiveFind.h"
+#import "PLCustomListViewController.h"
 
 @interface UINavigationController (convenience)
 - (TSKTableViewController *)previousViewController;
@@ -55,16 +56,6 @@
 - (NSArray *)menuItemsFromItems:(NSArray *)items;
 @end
 
-@interface PLCustomListViewController: TSKViewController
-
-@property (nonatomic, strong) NSDictionary *rootPlist;
-@property (nonatomic, strong) NSString *ourDomain;
-@property (nonatomic, strong) NSArray *menuItems;
-@property (nonatomic, strong) UIImage *ourIcon;
-
-- (void)relaunchBackboardd;
-- (void)showMissingActionAlert;
-@end
 
 @interface TVSettingsTweakViewController : TSKViewController
 
