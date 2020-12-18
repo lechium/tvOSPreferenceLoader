@@ -1,9 +1,9 @@
 Package: preferenceloader
 Name: preferenceloader
 Depends: mobilesubstrate
-Version: 1.4
+Version: 1.5
 Architecture: appletvos-arm64
-Description: load preferences in style, based on Dustin Howett's iOS version.
+Description: load preferences in style, based on Dustin Howett's iOS version, now properly split into a lib & tweak
 Maintainer: Kevin Bradley
 Author: Kevin Bradley & Sam Bingner
 Section: System
