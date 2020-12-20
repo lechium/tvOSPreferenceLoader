@@ -383,7 +383,7 @@ static NSString *const PLAlternatePlistNameKey = @"pl_alt_plist_name";
             id facade = nil;
             NSString *domain = obj[@"defaults"];
             //NSString *postNotification = obj[@"PostNotification"];
-            facade = [[NSClassFromString(@"TVSettingsPreferenceFacade") alloc] initWithDomain:domain notifyChanges:TRUE];
+            facade = [[NSClassFromString(@"TSKPreferencesFacade") alloc] initWithDomain:domain notifyChanges:TRUE];
             TSKSettingItem *settingsItem = [TSKSettingItem toggleItemWithTitle:label description:description representedObject:facade keyPath:key onTitle:nil offTitle:nil];
             if (defaultOn){
                 [settingsItem setDefaultValue:@1];
@@ -413,7 +413,7 @@ static NSString *const PLAlternatePlistNameKey = @"pl_alt_plist_name";
             BOOL isEmail = [obj[@"isEmail"] boolValue]; //use email keyboard
             BOOL noAutoCorrect = [obj[@"noAutoCorrect"] boolValue]; //turn off auto-correct
             
-            id facade = [[NSClassFromString(@"TVSettingsPreferenceFacade") alloc] initWithDomain:domain notifyChanges:TRUE];
+            id facade = [[NSClassFromString(@"TSKPreferencesFacade") alloc] initWithDomain:domain notifyChanges:TRUE];
             
             TSKTextInputSettingItem *textEntryItem =  [TSKTextInputSettingItem textInputItemWithTitle:label description:description representedObject:facade keyPath:key];
             if(secure) {
@@ -466,10 +466,16 @@ static NSString *const PLAlternatePlistNameKey = @"pl_alt_plist_name";
             if (!availableValues){
                 availableValues = obj[@"validValues"];
             }
-            id facade = [[NSClassFromString(@"TVSettingsPreferenceFacade") alloc] initWithDomain:domain notifyChanges:TRUE];
+            NSArray *availableTitles = obj[@"validTitles"];
+
+            id facade = [[NSClassFromString(@"TSKPreferencesFacade") alloc] initWithDomain:domain notifyChanges:TRUE];
             TSKSettingItem *multiItem = [TSKSettingItem multiValueItemWithTitle:label description:description representedObject:facade keyPath:key availableValues:availableValues];
             if (defaultValue){
                 [multiItem setDefaultValue:defaultValue];
+            }
+            if (availableTitles){
+                TSKMappingFormatter *maps = [[TSKMappingFormatter alloc] initWithInputs:availableValues outputs:availableTitles];
+                [multiItem setLocalizedValueFormatter:maps];
             }
             [currentGroupItems addObject:multiItem];
             
