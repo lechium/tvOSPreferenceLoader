@@ -6,6 +6,7 @@ INSTALL_TARGET_PROCESSES = TVSettings
 include $(THEOS)/makefiles/common.mk
 
 LIBRARY_NAME = libprefs
+libprefs_LOGOSFLAGS = -c generator=internal
 libprefs_FILES = prefs.xm Log.m
 libprefs_FRAMEWORKS = Foundation UIKit TVSettingKit
 libprefs_CFLAGS = -I. -F. -ITVSettings -fobjc-arc

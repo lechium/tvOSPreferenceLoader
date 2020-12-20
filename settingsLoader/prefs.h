@@ -29,6 +29,7 @@
 
 @interface NSBundle (additions)
 +(NSBundle *)bundleWithName:(NSString *)path;
++(NSBundle *)frameworkWithName:(NSString *)fwName;
 @end
 
 @interface UIViewController (clean_warning)

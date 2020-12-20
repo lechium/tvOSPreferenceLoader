@@ -166,6 +166,55 @@ NSString *const PLFilterKey = @"pl_filter";
 static NSString *const PLAlternatePlistNameKey = @"pl_alt_plist_name";
 /* }}} */
 
+%hook NSBundle
+
+%new + (NSBundle *)frameworkWithName:(NSString *)fwName {
+    NSArray *paths = @[@"/System/Library/Frameworks", @"/System/Library/PrivateFrameworks", @"/Library/Frameworks"];
+    __block NSBundle *_bundle = nil;
+    [paths enumerateObjectsUsingBlock:^(id  _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+        
+        NSString *guessedPath = [[obj stringByAppendingPathComponent:fwName] stringByAppendingPathExtension:@"framework"];
+        NSLog(@"testing path: %@", guessedPath);
+        if ([[NSFileManager defaultManager] fileExistsAtPath:guessedPath]){
+            NSLog(@"found path: %@!", guessedPath);
+            _bundle = [NSBundle bundleWithPath:guessedPath];
+            *stop = true;
+        }
+    }];
+    return _bundle;
+}
+
+%new + (NSBundle *)bundleWithName:(NSString *)bundleName {
+    NSArray *paths = @[@"/System/Library/PreferenceBundles", @"/Library/PreferenceBundles"];
+    __block NSBundle *_bundle = nil;
+    [paths enumerateObjectsUsingBlock:^(id  _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+        
+        NSString *guessedPath = [[obj stringByAppendingPathComponent:bundleName] stringByAppendingPathExtension:@"bundle"];
+        NSLog(@"testing path: %@", guessedPath);
+        if ([[NSFileManager defaultManager] fileExistsAtPath:guessedPath]){
+            NSLog(@"found path: %@!", guessedPath);
+            _bundle = [NSBundle bundleWithPath:guessedPath];
+            *stop = true;
+        }
+    }];
+    if (!_bundle) return [self frameworkWithName:bundleName];
+    return _bundle;
+}
+
++ (NSBundle *)bundleWithPath:(NSString *)path {
+	NSString *newPath = nil;
+	NSRange sysRange = [path rangeOfString:@"/System/Library/PreferenceBundles" options:0];
+	if(sysRange.location != NSNotFound) {
+		newPath = [path stringByReplacingCharactersInRange:sysRange withString:@"/Library/PreferenceBundles"];
+	}
+	if(newPath && [[NSFileManager defaultManager] fileExistsAtPath:newPath]) {
+		// /Library/PreferenceBundles will override /System/Library/PreferenceBundles.
+		path = newPath;
+	}
+	return %orig;
+}
+%end
+
 /*
  
  This is where it converts our plist entries into TSKSettingGroups/Items that can actually be displayed in TVSettings. If applicable.
@@ -292,6 +341,8 @@ static NSString *const PLAlternatePlistNameKey = @"pl_alt_plist_name";
 }
 
 - (NSArray *)menuItemsFromItems:(NSArray *)items {
+
+    if (!items) return nil;
     /* these plists are kind of dumb imo, you need to loop through the items but the way you dilineate groups is they start and stop when the next group is found.
      
      ie Group 1 | Item 1 | Item 2 | Group 2 | Item 3 | Item 4 | Group 3 ... so item 1&2 would be in group 1, 3 & 4 in Group 2 etc..
@@ -564,6 +615,20 @@ static NSString *const PLAlternatePlistNameKey = @"pl_alt_plist_name";
     });
 }
 
+- (void)noItemsFound:(id)sender {
+    
+    UIAlertController *notFoundAlert = [UIAlertController alertControllerWithTitle:@"Items not found" message:@"You settings bundle is malformed or you improperly subclassed PLCustomListViewController!" preferredStyle:UIAlertControllerStyleAlert];
+    
+    UIAlertAction *cancel = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleCancel handler:nil];
+    [notFoundAlert addAction:cancel];
+    
+    dispatch_async(dispatch_get_main_queue(), ^{
+        
+        [self presentViewController:notFoundAlert animated:TRUE completion:nil];
+        
+    });
+}
+
 - (void)relaunchBackboardd {
     
     [NSTask launchedTaskWithLaunchPath:@"/usr/bin/killall" arguments:@[@"-9", @"backboardd"]];
@@ -579,6 +644,11 @@ static NSString *const PLAlternatePlistNameKey = @"pl_alt_plist_name";
 {
     NSMutableArray *_backingArray = [NSMutableArray new];
     NSArray *items = [self menuItemsFromItems:self.menuItems];
+    if (!items){
+        TSKSettingItem *emptyItem = [TSKSettingItem actionItemWithTitle:@"No setting items found" description:@"There was a problem loading items for this bundle!" representedObject:nil keyPath:nil target:self action:@selector(noItemsFound:) ];
+        TSKSettingGroup *emptyGroupItem = [TSKSettingGroup groupWithTitle:@"Empty" settingItems:@[emptyItem]];
+        items = @[emptyGroupItem];
+    }
     [_backingArray addObjectsFromArray:items];
     [self setValue:_backingArray forKey:@"_settingGroups"];
     return _backingArray;
@@ -726,10 +796,6 @@ static NSString *const PLAlternatePlistNameKey = @"pl_alt_plist_name";
     return allTheSpecs;
 }
 
-
-
-
-
 -(id)previewForItemAtIndexPath:(NSIndexPath *)indexPath {
     TSKSettingGroup *currentGroup = self.settingGroups[indexPath.section];
     TSKSettingItem *currentItem = currentGroup.settingItems[indexPath.row];
@@ -762,5 +828,9 @@ static NSString *const PLAlternatePlistNameKey = @"pl_alt_plist_name";
     return previewItem;
 }
 
-
 @end
+
+
+%ctor {
+    %init;
+}

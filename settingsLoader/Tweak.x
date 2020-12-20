@@ -15,40 +15,6 @@
 // 	return [string1 localizedCaseInsensitiveCompare:string2];
 // }
 
-
-
-%hook NSBundle
-
-%new + (NSBundle *)bundleWithName:(NSString *)bundleName {
-    NSArray *paths = @[@"/System/Library/PreferenceBundles", @"/Library/PreferenceBundles"];
-    __block NSBundle *_bundle = nil;
-    [paths enumerateObjectsUsingBlock:^(id  _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
-        
-        NSString *guessedPath = [[obj stringByAppendingPathComponent:bundleName] stringByAppendingPathExtension:@"bundle"];
-        NSLog(@"testing path: %@", guessedPath);
-        if ([[NSFileManager defaultManager] fileExistsAtPath:guessedPath]){
-            NSLog(@"found path: %@!", guessedPath);
-            _bundle = [NSBundle bundleWithPath:guessedPath];
-            *stop = true;
-        }
-    }];
-    return _bundle;
-}
-
-+ (NSBundle *)bundleWithPath:(NSString *)path {
-	NSString *newPath = nil;
-	NSRange sysRange = [path rangeOfString:@"/System/Library/PreferenceBundles" options:0];
-	if(sysRange.location != NSNotFound) {
-		newPath = [path stringByReplacingCharactersInRange:sysRange withString:@"/Library/PreferenceBundles"];
-	}
-	if(newPath && [[NSFileManager defaultManager] fileExistsAtPath:newPath]) {
-		// /Library/PreferenceBundles will override /System/Library/PreferenceBundles.
-		path = newPath;
-	}
-	return %orig;
-}
-%end
-
 @interface TVSettingsMainViewController: TSKViewController
 
  - (BOOL)loadTweakMenu; //a function we add, add this header to prevent build warnings
