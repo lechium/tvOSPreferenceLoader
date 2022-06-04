@@ -1,0 +1,47 @@
+--- !tapi-tbd
+tbd-version:           4
+targets:               [ arm64-tvos ]
+uuids:
+  - target: arm64-tvos
+    value: '0FF38802-6DCC-3132-A24F-0D487E290C6C'
+flags:                 [ flat_namespace, not_app_extension_safe ]
+install-name:          /usr/lib/libprefs.dylib
+current-version:       0
+compatibility-version: 0
+exports:
+  - targets:              [ arm64-tvos ]
+    objc-classes:         [ PLCustomListViewController,
+                            TVSettingsTweakViewController ]
+undefineds:
+  - targets:              [ arm64-tvos ]
+    symbols:              [ _NSClassFromString, _NSLog, _NSSelectorFromString,
+                            __Block_object_assign, __Block_object_dispose,
+                            __NSConcreteStackBlock, __Unwind_Resume,
+                            ___CFConstantStringClassReference,
+                            ___gxx_personality_v0, ___stack_chk_fail,
+                            ___stack_chk_guard, __dispatch_main_q,
+                            __objc_empty_cache, _class_addMethod,
+                            _class_copyMethodList,
+                            _class_getMethodImplementation, _class_getSuperclass,
+                            _dispatch_async, _free,
+                            _kCFCoreFoundationVersionNumber,
+                            _method_getImplementation, _method_getName,
+                            _method_getTypeEncoding, _method_setImplementation,
+                            _objc_alloc, _objc_autoreleaseReturnValue,
+                            _objc_enumerationMutation, _objc_getAssociatedObject,
+                            _objc_getClass, _objc_msgSend, _objc_msgSendSuper2,
+                            _objc_release, _objc_retain,
+                            _objc_retainAutoreleasedReturnValue,
+                            _objc_setAssociatedObject, _objc_storeStrong,
+                            _objc_sync_enter, _objc_sync_exit,
+                            _objc_unsafeClaimAutoreleasedReturnValue,
+                            _object_getClass, dyld_stub_binder ]
+    objc-classes:         [ NSArray, NSBundle, NSDictionary, NSFileManager,
+                            NSMutableArray, NSNumber, NSObject, NSString, NSTask,
+                            TSKBundleLoader, TSKMappingFormatter,
+                            TSKPreviewViewController, TSKSettingGroup,
+                            TSKSettingItem, TSKTableViewController,
+                            TSKTextInputSettingItem, TSKVibrantImageView,
+                            TSKViewController, UIAlertAction, UIAlertController,
+                            UIImage, UINavigationController, UITableViewCell, UIView ]
+...
