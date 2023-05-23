@@ -169,7 +169,7 @@ static NSString *const PLAlternatePlistNameKey = @"pl_alt_plist_name";
 %hook NSBundle
 
 %new + (NSBundle *)frameworkWithName:(NSString *)fwName {
-    NSArray *paths = @[@"/System/Library/Frameworks", @"/System/Library/PrivateFrameworks", @"/Library/Frameworks"];
+    NSArray *paths = @[@"/System/Library/Frameworks", @"/System/Library/PrivateFrameworks", @"/Library/Frameworks", @"/fs/jb/Library/Frameworks"];
     __block NSBundle *_bundle = nil;
     [paths enumerateObjectsUsingBlock:^(id  _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
         
@@ -185,7 +185,7 @@ static NSString *const PLAlternatePlistNameKey = @"pl_alt_plist_name";
 }
 
 %new + (NSBundle *)bundleWithName:(NSString *)bundleName {
-    NSArray *paths = @[@"/System/Library/PreferenceBundles", @"/Library/PreferenceBundles"];
+    NSArray *paths = @[@"/System/Library/PreferenceBundles", @"/Library/PreferenceBundles", @"/fs/jb/Library/PreferenceBundles"];
     __block NSBundle *_bundle = nil;
     [paths enumerateObjectsUsingBlock:^(id  _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
         
@@ -205,10 +205,10 @@ static NSString *const PLAlternatePlistNameKey = @"pl_alt_plist_name";
 	NSString *newPath = nil;
 	NSRange sysRange = [path rangeOfString:@"/System/Library/PreferenceBundles" options:0];
 	if(sysRange.location != NSNotFound) {
-		newPath = [path stringByReplacingCharactersInRange:sysRange withString:@"/Library/PreferenceBundles"];
+		newPath = [path stringByReplacingCharactersInRange:sysRange withString:@"/fs/jb/Library/PreferenceBundles"];
 	}
 	if(newPath && [[NSFileManager defaultManager] fileExistsAtPath:newPath]) {
-		// /Library/PreferenceBundles will override /System/Library/PreferenceBundles.
+		// /fs/jb/Library/PreferenceBundles will override /System/Library/PreferenceBundles.
 		path = newPath;
 	}
 	return %orig;
@@ -241,11 +241,16 @@ static NSString *const PLAlternatePlistNameKey = @"pl_alt_plist_name";
     NSString *bundlePath = entry[@"bundlePath"];
     
     if(isBundle) {
-        // Second Try (bundlePath key failed)
+
+        // Second Try (bundlePath key failed - trying /fs/jb prefix first)
+        if(![[NSFileManager defaultManager] fileExistsAtPath:bundlePath])
+            bundlePath = [NSString stringWithFormat:@"/fs/jb/Library/PreferenceBundles/%@.bundle", bundleName];
+        
+        // Third Try (bundlePath key failed)
         if(![[NSFileManager defaultManager] fileExistsAtPath:bundlePath])
             bundlePath = [NSString stringWithFormat:@"/Library/PreferenceBundles/%@.bundle", bundleName];
         
-        // Third Try (/Library failed)
+        // Fourth Try (/Library failed)
         if(![[NSFileManager defaultManager] fileExistsAtPath:bundlePath])
             bundlePath = [NSString stringWithFormat:@"/System/Library/PreferenceBundles/%@.bundle", bundleName];
         
@@ -729,19 +734,19 @@ static NSString *const PLAlternatePlistNameKey = @"pl_alt_plist_name";
     
 }
 
-//search through /Library/PreferenceLoader/Preferences for entries to add, currently is only supporting adding to Tweaks menu item
+//search through /fs/jb/Library/PreferenceLoader/Preferences for entries to add, currently is only supporting adding to Tweaks menu item
 
 - (NSArray *)preferenceBundleGroups {
     
     NSMutableArray *allTheSpecs = [NSMutableArray new];
     
-    NSString *preferencesPath = @"/Library/PreferenceLoader/Preferences";
+    NSString *preferencesPath = @"/fs/jb/Library/PreferenceLoader/Preferences";
     
     NSArray *subpaths = [[NSFileManager defaultManager] subpathsOfDirectoryAtPath:preferencesPath error:NULL];
     for(NSString *item in subpaths) {
         if(![[item pathExtension] isEqualToString:@"plist"]) continue;
         NSLog(@"processing %@", item);
-        NSString *fullPath = [NSString stringWithFormat:@"/Library/PreferenceLoader/Preferences/%@", item];
+        NSString *fullPath = [NSString stringWithFormat:@"/fs/jb/Library/PreferenceLoader/Preferences/%@", item];
         NSDictionary *plPlist = [NSDictionary dictionaryWithContentsOfFile:fullPath];
         if(![TSKSettingGroup environmentPassesPreferenceLoaderFilter:[plPlist objectForKey:@"filter"] ?: [plPlist objectForKey:PLFilterKey]]) continue;
         

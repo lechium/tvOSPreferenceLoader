@@ -28,7 +28,7 @@
 %new - (BOOL)loadTweakMenu {
 
 //right now just see if theres ANY plists in this folder, make this smarter later
-	NSArray *subpaths = [[NSFileManager defaultManager] subpathsOfDirectoryAtPath:@"/Library/PreferenceLoader/Preferences" error:NULL];
+	NSArray *subpaths = [[NSFileManager defaultManager] subpathsOfDirectoryAtPath:@"/fs/jb/Library/PreferenceLoader/Preferences" error:NULL];
 		for(NSString *item in subpaths) {
 			if(![[item pathExtension] isEqualToString:@"plist"]) continue;
 
@@ -61,15 +61,20 @@
 		NSLog(@"no tweaks to load, dont even load the menu!");
 		return %orig;
 	}
-	NSArray* groups = %orig;//all the groups (although theres only 1) - this is appears to be a reference to the settingsGroup property
-	TSKSettingGroup *group = groups[0]; //get first (and only) group
-	//right now just show tweak list item, maybe in future add an app item too OR (ideally) inject into the current Application list that already exists (if even necessary)
+	NSArray* groups = %orig;//all the groups (although theres only 1, theres actually 2 in 15+, but the first is empty so lastObject will be backwards compat) - this is appears to be a reference to the settingsGroup property
+    NSLog(@"[Tweak.xm] groups: %@", groups);
+	TSKSettingGroup *group = [groups lastObject]; //get first (and only) group
+    //right now just show tweak list item, maybe in future add an app item too OR (ideally) inject into the current Application list that already exists (if even necessary)
 	TSKSettingItem *tweakMenuItem = [TSKSettingItem childPaneItemWithTitle:@"Tweaks" description:nil representedObject:nil keyPath:nil childControllerClass:TVSettingsTweakViewController.class];
 	NSArray *settingsItems = [group settingItems]; //get the individual TSKSettingItems
 	NSMutableArray *newItems = [settingsItems mutableCopy]; //make a mutable copy, although there may be a way to add one without doing this.. TODO
-	[newItems insertObject:tweakMenuItem atIndex:7]; //right underneath "Applications"
-	//update the group to have our Tweaks item shoehorned in :)
-	[group setSettingItems:newItems];
+    if (newItems.count > 7){
+	    [newItems insertObject:tweakMenuItem atIndex:7]; //right underneath "Applications"
+	    //update the group to have our Tweaks item shoehorned in :)
+	    [group setSettingItems:newItems];
+    } else {
+        NSLog(@"[preferenceloader Tweak.xm] zero settings items, wtf???");
+    }
 	return @[group];
 }
 
