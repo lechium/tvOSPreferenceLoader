@@ -28,7 +28,7 @@
 %new - (BOOL)loadTweakMenu {
 
 //right now just see if theres ANY plists in this folder, make this smarter later
-	NSArray *subpaths = [[NSFileManager defaultManager] subpathsOfDirectoryAtPath:@"/fs/jb/Library/PreferenceLoader/Preferences" error:NULL];
+	NSArray *subpaths = [[NSFileManager defaultManager] subpathsOfDirectoryAtPath:@"/Library/PreferenceLoader/Preferences" error:NULL];
 		for(NSString *item in subpaths) {
 			if(![[item pathExtension] isEqualToString:@"plist"]) continue;
 

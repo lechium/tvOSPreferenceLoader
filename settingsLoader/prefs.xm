@@ -740,13 +740,13 @@ static NSString *const PLAlternatePlistNameKey = @"pl_alt_plist_name";
     
     NSMutableArray *allTheSpecs = [NSMutableArray new];
     
-    NSString *preferencesPath = @"/fs/jb/Library/PreferenceLoader/Preferences";
+    NSString *preferencesPath = @"/Library/PreferenceLoader/Preferences";
     
     NSArray *subpaths = [[NSFileManager defaultManager] subpathsOfDirectoryAtPath:preferencesPath error:NULL];
     for(NSString *item in subpaths) {
         if(![[item pathExtension] isEqualToString:@"plist"]) continue;
         NSLog(@"processing %@", item);
-        NSString *fullPath = [NSString stringWithFormat:@"/fs/jb/Library/PreferenceLoader/Preferences/%@", item];
+        NSString *fullPath = [NSString stringWithFormat:@"/Library/PreferenceLoader/Preferences/%@", item];
         NSDictionary *plPlist = [NSDictionary dictionaryWithContentsOfFile:fullPath];
         if(![TSKSettingGroup environmentPassesPreferenceLoaderFilter:[plPlist objectForKey:@"filter"] ?: [plPlist objectForKey:PLFilterKey]]) continue;
         
